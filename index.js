@@ -7,4 +7,3 @@ const config = {
 
 const searchClient = new MinLia.SearchClient(config);
 searchClient.init();
-searchClient.search('dog');

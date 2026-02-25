@@ -1,41 +1,20 @@
-// const documents = [
-//   { id: 1, name: "Classic Toaster", typo: 0,  popularity: 100, price: 20 },
-//   { id: 2, name: "Modern Toaster", typo: 0,  popularity: 100, price: 15 },
-//   { id: 3, name: "Basic Toaster", typo: 1,  popularity: 50,  price: 10 },
-//   { id: 4, name: "Deluxe Toaster", typo: 1,  popularity: 150, price: 50 },
-// ];
-
-// const rankedResults = documents.sort((a, b) => {
-//
-//   if (b.typo !== a.typo) {
-//     return b.typo + a.typo;
-//   }
-//
-//   else if (b.popularity !== a.popularity) {
-//     return b.popularity - a.popularity;
-//   }
-//
-//   return a.price + b.price;
-// });
-//
-// console.table(rankedResults);
-//
-
 class Client {
   constructor(config) {
     this.config = config;
     this.rawDocStore = [];
-    this.punctuationRegex = /[\.,'"?!]/g;
+    this.punctuationRegex = /[^a-zA-Z0-9 ]/g;
     this.invertedIndex = {};
   }
 
   init() {
     this.#processRawDocs();
     this.#createInvertedIndex();
+    this.#createEventListeners();
   }
 
-  async search(query) {
-    console.log(query);
+  search(e) {
+    const queryTokens = this.#normaliseAndTokeniseQuery(e.target.value);
+    const invertedIndexMatches = this.#getInvertedIndexMatches(queryTokens);
   }
 
   get rawDocs() {
@@ -44,6 +23,38 @@ class Client {
 
   get ii() {
     return this.invertedIndex;
+  }
+
+  #createEventListeners() {
+    const searchBox = document.querySelector("#searchBox");
+    searchBox.addEventListener("input", (e) => this.search(e));
+  }
+
+  #getInvertedIndexMatches(queryTokens) {
+    let match = false;
+
+    for (const token of queryTokens) {
+        if (!this.invertedIndex.hasOwnProperty(token)) {
+            match = false;
+        }
+        else match = true
+    }
+
+    if ( !match ) return;
+
+    for (const token of queryTokens) {
+      console.log(this.invertedIndex[token]);
+    }
+  }
+
+  #normaliseAndTokeniseQuery(query) {
+    const normalisedQuery = query
+      .toLowerCase()
+      .trim()
+      .replace(this.punctuationRegex, "")
+      .replaceAll("  ", " ");
+    const normalisedQueryTokens = normalisedQuery.split(" ");
+    return normalisedQueryTokens;
   }
 
   #processRawDocs() {
@@ -87,8 +98,7 @@ class Client {
       for (const token of uniqueDocTokens) {
         if (invertedIndex.hasOwnProperty(token)) {
           invertedIndex[token].push(doc.objectid);
-        } 
-        else {
+        } else {
           invertedIndex[token] = [doc.objectid];
         }
       }
