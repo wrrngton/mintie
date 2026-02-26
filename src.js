@@ -28,14 +28,14 @@ class Client {
     return getRankedDocs(this, invertedIndexMatches);
   }
 
-  search(e) {
-    const queryTokens = normalise(this, e.target.value);
-    const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-    if (invertedIndexMatches.length === 0) {
-      return [];
-    }
-    return getRankedDocs(this, invertedIndexMatches);
-  }
+  // search(e) {
+  //   const queryTokens = normalise(this, e.target.value);
+  //   const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
+  //   if (invertedIndexMatches.length === 0) {
+  //     return [];
+  //   }
+  //   return getRankedDocs(this, invertedIndexMatches);
+  // }
 }
 
 window.MinLia = {
