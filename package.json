@@ -1,0 +1,25 @@
+{
+  "name": "minlia",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "esbuild src.js --bundle --sourcemap --outfile=dist/minli.js --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wrrngton/minlia.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/wrrngton/minlia/issues"
+  },
+  "homepage": "https://github.com/wrrngton/minlia#readme",
+  "dependencies": {
+    "esbuild": "^0.27.3"
+  }
+}
