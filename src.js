@@ -16,13 +16,25 @@ class Client {
   init() {
     this.rawDocStore = processRawDocs(this);
     this.invertedIndex = createInvertedIndex(this);
-    createEventListeners(this);
+    // createEventListeners(this);
+  }
+
+  apiSearch(query) {
+    const queryTokens = normalise(this, query);
+    const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
+    if (invertedIndexMatches.length === 0) {
+      return [];
+    }
+    return getRankedDocs(this, invertedIndexMatches);
   }
 
   search(e) {
     const queryTokens = normalise(this, e.target.value);
     const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-    const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+    if (invertedIndexMatches.length === 0) {
+      return [];
+    }
+    return getRankedDocs(this, invertedIndexMatches);
   }
 }
 

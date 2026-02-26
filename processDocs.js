@@ -9,7 +9,7 @@ export function processRawDocs(instance) {
       rawDocObj[att] = doc.dataset[att];
     }
     for (const att of instance.config.customRanking) {
-      rawDocObj[att] = doc.dataset[att];
+      rawDocObj[att.attribute] = doc.dataset[att.attribute];
     }
     return rawDocObj;
   });
