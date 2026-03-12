@@ -9,7 +9,7 @@ export function createInvertedIndex(instance) {
     for (const [key, value] of Object.entries(doc)) {
       if (key == "objectid") continue;
 
-      const attributeTokens = normalise(instance, value);
+      const attributeTokens = normalise(instance, value, "docs");
 
       attributeTokens.forEach((token) => {
         if (instance.config.stopWords.includes(token)) return;

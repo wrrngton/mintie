@@ -1,8 +1,9 @@
 import { normalise } from "./normalise.js";
 import { processRawDocs } from "./processDocs.js";
-import { createInvertedIndex } from "./ii.js";
+import { createInvertedIndex } from "./invertedIndex.js";
 import { getInvertedIndexMatches } from "./query.js";
 import { getRankedDocs } from "./ranking.js";
+import { validateAndExportSettings } from "./settings.js";
 import { createEventListeners } from "./listeners.js";
 
 class Client {
@@ -10,11 +11,7 @@ class Client {
   invertedIndex = {};
 
   constructor(config) {
-    if (config) {
-      this.config = config;
-    } else {
-      console.log("no config");
-    }
+    this.config = validateAndExportSettings(config)
   }
 
   init() {
@@ -24,8 +21,9 @@ class Client {
   }
 
   apiSearch(query) {
-    const queryTokens = normalise(this, query);
+    const queryTokens = normalise(this, query, "search");
     const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
+    // console.log(invertedIndexMatches, "egg");
     if (invertedIndexMatches.length === 0) {
       return [];
     }
