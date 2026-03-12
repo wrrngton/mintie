@@ -10,7 +10,11 @@ class Client {
   invertedIndex = {};
 
   constructor(config) {
-    this.config = config;
+    if (config) {
+      this.config = config;
+    } else {
+      console.log("no config");
+    }
   }
 
   init() {

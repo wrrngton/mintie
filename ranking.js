@@ -4,6 +4,7 @@ export function getRankedDocs(instance, matches) {
   );
   const customRanking = instance.config.customRanking;
 
+  // Tie breaking algorithm
   const dynamicSort = (data, customRanking) => {
     return [...data].sort((a, b) => {
       for (const rule of customRanking) {

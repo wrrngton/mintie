@@ -1,3 +1,14 @@
+import { getLevenshteinDistance } from "./levenschtein.js";
+
+function matchIsNotTooFuzzy(term, token) {
+  // if (token.length < 4) 
+  const distance = getLevenshteinDistance(token, term);
+
+  if (distance > 2) return false;
+
+  return true;
+}
+
 export function getInvertedIndexMatches(instance, queryTokens) {
   let match = false;
 
@@ -10,6 +21,15 @@ export function getInvertedIndexMatches(instance, queryTokens) {
   const matchMatrix = [];
 
   for (const token of queryTokens) {
+    // Ignore fuzzy matching on short token queries
+    if (token.length > 2) {
+      const invertedIndexTerms = Object.keys(instance.invertedIndex);
+      const invertedIndexTermsFuzzyMatched = invertedIndexTerms.filter((term) =>
+        matchIsNotTooFuzzy(term, token),
+      );
+      console.log(invertedIndexTermsFuzzyMatched, "egg");
+    }
+
     matchMatrix.push(instance.invertedIndex[token]);
   }
 
