@@ -23,8 +23,7 @@ class Client {
   apiSearch(query) {
     const queryTokens = normalise(this, query, "search");
     const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-    // console.log(invertedIndexMatches, "egg");
-    if (invertedIndexMatches.length === 0) {
+    if (Objects.keys(invertedIndexMatches).length === 0) {
       return [];
     }
     return getRankedDocs(this, invertedIndexMatches);

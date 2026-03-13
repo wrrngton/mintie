@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "esbuild src.js --bundle --sourcemap --outfile=dist/minli.js --watch"
+    "dev": "esbuild src.js --bundle --sourcemap --outfile=test/minlia.js --watch",
+    "minifyBuild": "esbuild src.js --bundle --minify --outfile=dist/minlia.min.js",
+    "regularBuild": "esbuild src.js --bundle --outfile=dist/minlia.js",
+    "build": "npm run minifyBuild && npm run regularBuild"
   },
   "repository": {
     "type": "git",
