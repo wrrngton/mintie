@@ -4,29 +4,32 @@ import { createInvertedIndex } from "./invertedIndex.js";
 import { getInvertedIndexMatches } from "./query.js";
 import { getRankedDocs } from "./ranking.js";
 import { validateAndExportSettings } from "./settings.js";
-import { createEventListeners } from "./listeners.js";
+import { getApiResponse } from "./apiResponse.js";
+// import { createEventListeners } from "./listeners.js";
 
 class Client {
   rawDocStore = [];
   invertedIndex = {};
 
   constructor(config) {
-    this.config = validateAndExportSettings(config)
+    const { userSettings, engineDefaults } = validateAndExportSettings(config);
+    this.config = userSettings;
+    this.engineDefaults = engineDefaults;
   }
 
   init() {
     this.rawDocStore = processRawDocs(this);
     this.invertedIndex = createInvertedIndex(this);
-    // createEventListeners(this);
   }
 
   apiSearch(query) {
     const queryTokens = normalise(this, query, "search");
     const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-    if (Objects.keys(invertedIndexMatches).length === 0) {
+    if (Object.keys(invertedIndexMatches).length === 0) {
       return [];
     }
-    return getRankedDocs(this, invertedIndexMatches);
+    const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+    return rankedDocs;
   }
 
   // search(e) {

@@ -107,9 +107,9 @@
   }
 
   // query.js
-  function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
+  function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos2) {
     const distance = getLevenshteinDistance(token, term);
-    if (distance > acceptableNumTypos) {
+    if (distance > acceptableNumTypos2) {
       return [];
     }
     return {
@@ -122,7 +122,7 @@
     const invertedIndexTerms = Object.keys(instance.invertedIndex);
     for (const token of queryTokens) {
       const tokenLength = token.length;
-      if (tokenLength < 3) {
+      if (tokenLength <= instance.engineDefaults.disableTypoToleranceBeforeQueryLength) {
         if (invertedIndexTerms.includes(token)) {
           iiMatches.push([
             {
@@ -132,13 +132,20 @@
           ]);
         }
       } else {
-        const acceptableNumTypos = tokenLength > instance.config.minCharsFor1Typo ? 2 : 1;
+        if (tokenLength > instance.engineDefaults.disableTypoToleranceBeforeQueryLength && tokenLength >= instance.config.minCharsFor1Typo && tokenLength < instance.config.minCharsFor2Typos) {
+          acceptableNumTypos = 1;
+        } else if (tokenLength >= instance.config.minCharsFor2Typos) {
+          acceptableNumTypos = 2;
+        } else {
+          acceptableNumTypos = 0;
+        }
         const invertedIndexTermsFuzzyMatched = invertedIndexTerms.flatMap(
           (term) => matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos)
         );
         iiMatches.push(invertedIndexTermsFuzzyMatched);
       }
     }
+    if (iiMatches.length === 0) return {};
     const finalMatchedDocs = {};
     if (iiMatches.length === 1) {
       const matchedArray = iiMatches[0];
@@ -157,8 +164,11 @@
       return finalMatchedDocs;
     }
     const docsAsMatrix = iiMatches.map((match) => {
-      const flattened = match.flat();
-      for (const f of flattened) return f.docs;
+      const new_arr = [];
+      for (const f of match) {
+        new_arr.push(...f.docs);
+      }
+      return Array.from(new Set(new_arr));
     });
     const intersectArrays = (arrays) => {
       return arrays.reduce((acc, currentArray) => {
@@ -188,10 +198,17 @@
 
   // ranking.js
   function getRankedDocs(instance, matches) {
-    const docMatches = instance.rawDocStore.filter(
-      (doc) => matches.includes(doc.objectid)
+    const arrayOfDocMatchIds = Array.from(Object.keys(matches));
+    let docMatches = instance.rawDocStore.filter(
+      (doc) => arrayOfDocMatchIds.includes(doc.objectid)
     );
-    const customRanking = instance.config.customRanking;
+    docMatches = docMatches.map((doc) => {
+      return { ...doc, typo: matches[doc.objectid] };
+    });
+    const customRanking = [
+      { attribute: "typo", direction: -1 },
+      ...instance.config.customRanking
+    ];
     const dynamicSort = (data, customRanking2) => {
       return [...data].sort((a, b) => {
         for (const rule of customRanking2) {
@@ -208,17 +225,20 @@
   }
 
   // settings.js
-  var defaultSettings = {
+  var userSettings = {
     docSelector: ".card",
     searchableAttributes: ["title", "description"],
-    stopWords: ["a", "and", "the", "of", "for"],
-    minCharsFor1Typo: 3,
-    minCharsFor2Typos: 8,
+    stopWords: ["a", "and", "the", "f", "for"],
+    minCharsFor1Typo: 4,
+    minCharsFor2Typos: 6,
     customRanking: [
       { attribute: "popularity", direction: 1 },
       { attribute: "price", direction: -1 }
     ],
     searchBarSelector: "#searchBar"
+  };
+  var engineDefaults = {
+    disableTypoToleranceBeforeQueryLength: 3
   };
   function validateAndExportSettings(config) {
     if (!config) {
@@ -233,7 +253,7 @@
     if (config.minCharsFor1Typo > config.minCharsFor2Typos) {
       throw new Error("minCharsFor1Typo must be less than minCharsFor2Typos");
     }
-    const validConfigKeys = Object.keys(defaultSettings);
+    const validConfigKeys = Object.keys(userSettings);
     const userConfigKeys = Object.keys(config);
     for (const userConfigKey of userConfigKeys) {
       if (!validConfigKeys.includes(userConfigKey)) {
@@ -241,9 +261,9 @@
           `"${userConfigKey}" is not a valid config attribute`
         );
       }
-      defaultSettings[userConfigKey] = config[userConfigKey];
+      userSettings[userConfigKey] = config[userConfigKey];
     }
-    return defaultSettings;
+    return { userSettings, engineDefaults };
   }
 
   // src.js
@@ -251,7 +271,9 @@
     rawDocStore = [];
     invertedIndex = {};
     constructor(config) {
-      this.config = validateAndExportSettings(config);
+      const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
+      this.config = userSettings2;
+      this.engineDefaults = engineDefaults2;
     }
     init() {
       this.rawDocStore = processRawDocs(this);
@@ -260,10 +282,11 @@
     apiSearch(query) {
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-      if (Objects.keys(invertedIndexMatches).length === 0) {
+      if (Object.keys(invertedIndexMatches).length === 0) {
         return [];
       }
-      return getRankedDocs(this, invertedIndexMatches);
+      const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+      return rankedDocs;
     }
     // search(e) {
     //   const queryTokens = normalise(this, e.target.value);

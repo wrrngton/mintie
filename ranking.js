@@ -1,8 +1,21 @@
 export function getRankedDocs(instance, matches) {
-  const docMatches = instance.rawDocStore.filter((doc) =>
-    matches.includes(doc.objectid),
+  const arrayOfDocMatchIds = Array.from(Object.keys(matches));
+  let docMatches = instance.rawDocStore.filter((doc) =>
+    arrayOfDocMatchIds.includes(doc.objectid),
   );
-  const customRanking = instance.config.customRanking;
+
+  // Append typo to doc custom ranking
+  docMatches = docMatches.map((doc) => {
+    return { ...doc, typo: matches[doc.objectid] };
+  });
+
+  /*Add typos to beginning of ranking formula
+   * Does not affect underlying user configuration
+   */
+  const customRanking = [
+    { attribute: "typo", direction: -1 },
+    ...instance.config.customRanking,
+  ];
 
   // Tie breaking algorithm
   const dynamicSort = (data, customRanking) => {

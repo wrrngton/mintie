@@ -1,17 +1,21 @@
 import { ConfigError } from "./error.js";
 
 // Default search settings, overridden during Client.init() if present
-const defaultSettings = {
+const userSettings = {
   docSelector: ".card",
   searchableAttributes: ["title", "description"],
-  stopWords: ["a", "and", "the", "of", "for"],
-  minCharsFor1Typo: 3,
-  minCharsFor2Typos: 8,
+  stopWords: ["a", "and", "the", "f", "for"],
+  minCharsFor1Typo: 4,
+  minCharsFor2Typos: 6,
   customRanking: [
     { attribute: "popularity", direction: 1 },
     { attribute: "price", direction: -1 },
   ],
   searchBarSelector: "#searchBar",
+};
+
+const engineDefaults = {
+  disableTypoToleranceBeforeQueryLength: 3,
 };
 
 export function validateAndExportSettings(config) {
@@ -28,7 +32,7 @@ export function validateAndExportSettings(config) {
     throw new Error("minCharsFor1Typo must be less than minCharsFor2Typos");
   }
 
-  const validConfigKeys = Object.keys(defaultSettings);
+  const validConfigKeys = Object.keys(userSettings);
   const userConfigKeys = Object.keys(config);
 
   for (const userConfigKey of userConfigKeys) {
@@ -37,8 +41,8 @@ export function validateAndExportSettings(config) {
         `"${userConfigKey}" is not a valid config attribute`,
       );
     }
-    defaultSettings[userConfigKey] = config[userConfigKey];
+    userSettings[userConfigKey] = config[userConfigKey];
   }
 
-  return defaultSettings;
+  return { userSettings, engineDefaults };
 }

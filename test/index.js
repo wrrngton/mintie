@@ -13,7 +13,7 @@ function renderResults(result) {
 const config = {
   docSelector: ".card",
   searchableAttributes: ["title", "description"],
-  stopWords: ["a", "and", "the", "of", "for", "egg"],
+  stopWords: ["a", "and", "of", "for", "egg"],
   minCharsFor1Typo: 4,
   minCharsFor2Typos: 6,
   customRanking: [

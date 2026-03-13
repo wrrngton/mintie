@@ -13,17 +13,25 @@ function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
   };
 }
 
+/* Almost certainly a more elegant way to do this
+ * But working for now
+ */
+
 export function getInvertedIndexMatches(instance, queryTokens) {
   // Multidimensional array to support both 1 query token and N query tokens
   const iiMatches = [];
 
+  // Unpack all the terms in the inverted index
   const invertedIndexTerms = Object.keys(instance.invertedIndex);
 
   for (const token of queryTokens) {
     const tokenLength = token.length;
 
     // Ignore fuzzy matching on short token queries. We only do fuzzy matching on 3 characters or more
-    if (tokenLength < 3) {
+    if (
+      tokenLength <=
+      instance.engineDefaults.disableTypoToleranceBeforeQueryLength
+    ) {
       if (invertedIndexTerms.includes(token)) {
         iiMatches.push([
           {
@@ -33,14 +41,28 @@ export function getInvertedIndexMatches(instance, queryTokens) {
         ]);
       }
     } else {
-      const acceptableNumTypos =
-        tokenLength > instance.config.minCharsFor1Typo ? 2 : 1;
+      if (
+        tokenLength >
+        instance.engineDefaults.disableTypoToleranceBeforeQueryLength &&
+        tokenLength >= instance.config.minCharsFor1Typo &&
+        tokenLength < instance.config.minCharsFor2Typos
+      ) {
+        acceptableNumTypos = 1;
+      } else if (tokenLength >= instance.config.minCharsFor2Typos) {
+        acceptableNumTypos = 2;
+      } else {
+        acceptableNumTypos = 0;
+      }
+
       const invertedIndexTermsFuzzyMatched = invertedIndexTerms.flatMap(
         (term) => matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos),
       );
       iiMatches.push(invertedIndexTermsFuzzyMatched);
     }
   }
+
+  // Handle no results case
+  if(iiMatches.length === 0) return {}
 
   /* iiMatches can be a shallow, 1dimensional array if there is only query token
    * We don't need to do an AND check across more than 1 array for query matches
@@ -71,8 +93,11 @@ export function getInvertedIndexMatches(instance, queryTokens) {
 
   // Flatten array docs into a 2d array to check for matches across both arrays
   const docsAsMatrix = iiMatches.map((match) => {
-    const flattened = match.flat();
-    for (const f of flattened) return f.docs;
+    const new_arr = [];
+    for (const f of match) {
+      new_arr.push(...f.docs);
+    }
+    return Array.from(new Set(new_arr));
   });
 
   /* Check doc matches across both sub arrays
