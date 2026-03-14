@@ -1,6 +1,6 @@
 # MinLia
 
-MinLia (mini Algolia) is a client side interpretation of Algolia. Similar to [Lunr.js](https://lunrjs.com/), but instead of BM25, it uses a tie breaking algorithm, similar to Algolia.
+MinLia (mini Algolia) is a client side, vanilla Javascript interpretation of Algolia. Similar to [Lunr.js](https://lunrjs.com/), but instead of BM25, it uses a tie breaking algorithm, like Algolia.
 
 Documents are retrieved from page markup via standard CSS selectors. Search behaviour is controlled via user defined configuration and query time parameters.
 

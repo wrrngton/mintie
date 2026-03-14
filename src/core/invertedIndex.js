@@ -1,4 +1,4 @@
-import { normalise} from "./normalise.js";
+import { normalise} from "../utils/normalise.js";
 
 export function createInvertedIndex(instance) {
   const invertedIndex = {};

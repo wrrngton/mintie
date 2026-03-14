@@ -1,5 +1,5 @@
 (() => {
-  // normalise.js
+  // src/utils/normalise.js
   var punctuationRegex = /[^a-zA-Z0-9 ]/g;
   function normalise(instance, term, type) {
     const masterTokens = [];
@@ -27,15 +27,21 @@
     return combinedArrays;
   }
 
-  // error.js
+  // src/utils/error.js
   var ConfigError = class extends Error {
     constructor(errorMessage) {
       super(errorMessage);
       this.name = "ConfigError";
     }
   };
+  var QueryError = class extends Error {
+    constructor(errorMessage) {
+      super(errorMessage);
+      this.name = "QueryError";
+    }
+  };
 
-  // processDocs.js
+  // src/core/processDocs.js
   function processRawDocs(instance) {
     const rawDocuments = Array.from(
       document.querySelectorAll(instance.config.docSelector)
@@ -49,17 +55,26 @@
       let rawDocObj = {};
       rawDocObj.objectid = doc.dataset.objectid;
       for (const att of instance.config.searchableAttributes) {
-        rawDocObj[att] = doc.dataset[att];
+        if (doc.dataset[att]) {
+          rawDocObj[att] = doc.dataset[att];
+        }
+      }
+      for (const att of instance.config.facets) {
+        if (doc.dataset[att]) {
+          rawDocObj[att] = doc.dataset[att];
+        }
       }
       for (const att of instance.config.customRanking) {
-        rawDocObj[att.attribute] = doc.dataset[att.attribute];
+        if (doc.dataset[att.attribute]) {
+          rawDocObj[att.attribute] = doc.dataset[att.attribute];
+        }
       }
       return rawDocObj;
     });
     return rawDocumentsData;
   }
 
-  // invertedIndex.js
+  // src/core/invertedIndex.js
   function createInvertedIndex(instance) {
     const invertedIndex = {};
     for (const doc of instance.rawDocStore) {
@@ -85,7 +100,7 @@
     return invertedIndex;
   }
 
-  // levenschtein.js
+  // src/utils/levenschtein.js
   function getLevenshteinDistance(a, b) {
     const matrix = [];
     for (let i = 0; i <= b.length; i++) matrix[i] = [i];
@@ -106,7 +121,7 @@
     return matrix[b.length][a.length];
   }
 
-  // query.js
+  // src/core/query.js
   function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos2) {
     const distance = getLevenshteinDistance(token, term);
     if (distance > acceptableNumTypos2) {
@@ -196,7 +211,43 @@
     return finalMatchedDocs;
   }
 
-  // ranking.js
+  // src/core/queryFacets.js
+  function getFacets(instance, docIDs, facetNames) {
+    const rawDocStore = instance.rawDocStore;
+    const facets = {};
+    const configFacets = instance.config.facets;
+    if (configFacets.length === 0)
+      throw new QueryError(
+        "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration"
+      );
+    const possibleFacets = configFacets.flatMap((facet) => {
+      return Array.from(
+        new Set(
+          rawDocStore.map((doc) => doc.hasOwnProperty(facet) ? facet : false)
+        )
+      );
+    });
+    for (const facet of facetNames) {
+      if (!possibleFacets.includes(facet))
+        throw new QueryError(
+          "One or more of your query facets do not exist in your index"
+        );
+      facets[facet] = {};
+      for (const docID of docIDs) {
+        const rawDocs = rawDocStore.filter((doc) => doc.objectid === docID);
+        rawDocs.forEach((doc) => {
+          if (facets[facet].hasOwnProperty(doc[facet]))
+            facets[facet][doc[facet]] += 1;
+          else {
+            facets[facet][doc[facet]] = 1;
+          }
+        });
+      }
+    }
+    console.log(facets);
+  }
+
+  // src/core/ranking.js
   function getRankedDocs(instance, matches) {
     const arrayOfDocMatchIds = Array.from(Object.keys(matches));
     let docMatches = instance.rawDocStore.filter(
@@ -224,11 +275,12 @@
     return dynamicSort(docMatches, customRanking);
   }
 
-  // settings.js
+  // src/settings.js
   var userSettings = {
     docSelector: ".card",
     searchableAttributes: ["title", "description"],
     stopWords: ["a", "and", "the", "f", "for"],
+    facets: [],
     minCharsFor1Typo: 4,
     minCharsFor2Typos: 6,
     customRanking: [
@@ -266,7 +318,7 @@
     return { userSettings, engineDefaults };
   }
 
-  // src.js
+  // src/index.js
   var Client = class {
     rawDocStore = [];
     invertedIndex = {};
@@ -279,6 +331,9 @@
       this.rawDocStore = processRawDocs(this);
       this.invertedIndex = createInvertedIndex(this);
     }
+    getQueryFacets(docIDs, facetNames) {
+      getFacets(this, docIDs, facetNames);
+    }
     apiSearch(query) {
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
@@ -286,6 +341,8 @@
         return [];
       }
       const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+      const rankedDocsIDs = rankedDocs.map((doc) => doc.objectid);
+      const facetsForQuery = this.getQueryFacets(rankedDocsIDs, ["category"]);
       return rankedDocs;
     }
     // search(e) {

@@ -1,4 +1,4 @@
-import { ConfigError } from "./error.js";
+import { ConfigError } from "../utils/error.js";
 
 export function processRawDocs(instance) {
   const rawDocuments = Array.from(
@@ -15,10 +15,19 @@ export function processRawDocs(instance) {
     let rawDocObj = {};
     rawDocObj.objectid = doc.dataset.objectid;
     for (const att of instance.config.searchableAttributes) {
-      rawDocObj[att] = doc.dataset[att];
+      if (doc.dataset[att]) {
+        rawDocObj[att] = doc.dataset[att];
+      }
+    }
+    for (const att of instance.config.facets) {
+      if (doc.dataset[att]) {
+        rawDocObj[att] = doc.dataset[att];
+      }
     }
     for (const att of instance.config.customRanking) {
-      rawDocObj[att.attribute] = doc.dataset[att.attribute];
+      if (doc.dataset[att.attribute]) {
+        rawDocObj[att.attribute] = doc.dataset[att.attribute];
+      }
     }
     return rawDocObj;
   });

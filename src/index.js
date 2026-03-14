@@ -1,10 +1,10 @@
-import { normalise } from "./normalise.js";
-import { processRawDocs } from "./processDocs.js";
-import { createInvertedIndex } from "./invertedIndex.js";
-import { getInvertedIndexMatches } from "./query.js";
-import { getRankedDocs } from "./ranking.js";
+import { normalise } from "./utils/normalise.js";
+import { processRawDocs } from "./core/processDocs.js";
+import { createInvertedIndex } from "./core/invertedIndex.js";
+import { getInvertedIndexMatches } from "./core/query.js";
+import { getFacets } from "./core/queryFacets.js";
+import { getRankedDocs } from "./core/ranking.js";
 import { validateAndExportSettings } from "./settings.js";
-import { getApiResponse } from "./apiResponse.js";
 // import { createEventListeners } from "./listeners.js";
 
 class Client {
@@ -21,6 +21,10 @@ class Client {
     this.rawDocStore = processRawDocs(this);
     this.invertedIndex = createInvertedIndex(this);
   }
+  
+  getQueryFacets(docIDs, facetNames) {
+    getFacets(this, docIDs, facetNames);
+  }
 
   apiSearch(query) {
     const queryTokens = normalise(this, query, "search");
@@ -29,6 +33,8 @@ class Client {
       return [];
     }
     const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+    const rankedDocsIDs = rankedDocs.map((doc) => doc.objectid);
+    const facetsForQuery = this.getQueryFacets(rankedDocsIDs, ["category"]);
     return rankedDocs;
   }
 
