@@ -1,4 +1,5 @@
 import { getLevenshteinDistance } from "../utils/levenschtein.js";
+import {filtering} from "./filtering.js";
 
 function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
   const distance = getLevenshteinDistance(token, term);
@@ -11,7 +12,7 @@ function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
     docs: instance.invertedIndex[term],
     distance: distance,
   };
-}
+};
 
 /* Almost certainly a more elegant way to do this
  * But working for now

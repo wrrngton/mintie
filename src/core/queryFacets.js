@@ -1,21 +1,26 @@
 import { QueryError } from "../utils/error.js";
 
-export function getFacets(instance, docIDs, facetNames) {
-  const rawDocStore = instance.rawDocStore;
+export function getFacets(instance, rankedDocs) {
   const facets = {};
 
-  // Check if provided lists of facet names is valid
+  // If no payload is passed, this function can be skipped. We pass an empty facets obj
+  if (instance.payload == null) return {};
+
   const configFacets = instance.config.facets;
 
+  // Check if provided lists of facet names is valid
   if (configFacets.length === 0)
     throw new QueryError(
-      "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration",
+      "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration to include the facets you want to return",
     );
+
+  // If checks pass, grab the facet names
+  const facetNames = instance.payload.facets;
 
   const possibleFacets = configFacets.flatMap((facet) => {
     return Array.from(
       new Set(
-        rawDocStore.map((doc) => (doc.hasOwnProperty(facet) ? facet : false)),
+        rankedDocs.map((doc) => (doc.hasOwnProperty(facet) ? facet : false)),
       ),
     );
   });
@@ -28,16 +33,14 @@ export function getFacets(instance, docIDs, facetNames) {
 
     facets[facet] = {};
 
-    for (const docID of docIDs) {
-      const rawDocs = rawDocStore.filter((doc) => doc.objectid === docID);
-      rawDocs.forEach((doc) => {
-        if (facets[facet].hasOwnProperty(doc[facet]))
-          facets[facet][doc[facet]] += 1;
-        else {
-          facets[facet][doc[facet]] = 1;
-        }
-      });
-    }
+    rankedDocs.forEach((doc) => {
+      if (facets[facet].hasOwnProperty(doc[facet])) {
+        facets[facet][doc[facet]] += 1;
+      } else {
+        if (doc[facet] == undefined) return;
+        facets[facet][doc[facet]] = 1;
+      }
+    });
   }
-  console.log(facets);
+  return facets;
 }

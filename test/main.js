@@ -13,10 +13,11 @@ function renderResults(result) {
 const config = {
   docSelector: ".card",
   searchableAttributes: ["title", "description"],
-  facets: ["category"],
   stopWords: ["a", "and", "of", "for", "egg"],
   minCharsFor1Typo: 4,
   minCharsFor2Typos: 6,
+  facets: ["category", "topic"],
+  attributesToRetrieve: ["title", "description"],
   customRanking: [
     { attribute: "popularity", direction: 1 },
     { attribute: "price", direction: -1 },
@@ -33,10 +34,11 @@ searchBar.addEventListener("input", (e) => {
   if (query.length === 0) return hits.innerHTML = "";
 
   hits.innerHTML = '';
-  const results = searchClient.apiSearch(e.target.value);
+  const response = searchClient.apiSearch(e.target.value);
+  const searchHits = response.hits;
   
-  if (results.length === 0) return hits.innerHTML = 'No results';
+  if (searchHits.length === 0) return hits.innerHTML = 'No results';
 
-  const resultsHtml = results.map((result) => renderResults(result)).join('');
+  const resultsHtml = searchHits.map((result) => renderResults(result)).join('');
   hits.insertAdjacentHTML('afterbegin', resultsHtml);
 });

@@ -2,14 +2,18 @@ import { normalise } from "./utils/normalise.js";
 import { processRawDocs } from "./core/processDocs.js";
 import { createInvertedIndex } from "./core/invertedIndex.js";
 import { getInvertedIndexMatches } from "./core/query.js";
+import { filtering } from "./core/filtering.js";
 import { getFacets } from "./core/queryFacets.js";
 import { getRankedDocs } from "./core/ranking.js";
-import { validateAndExportSettings } from "./settings.js";
+import { validateAndExportSettings } from "./validators/settings.js";
+import { validateAndExportPayload } from "./validators/payload.js";
+import { GenerateResponse } from "./api/apiResponse.js";
 // import { createEventListeners } from "./listeners.js";
 
 class Client {
   rawDocStore = [];
   invertedIndex = {};
+  payload = null;
 
   constructor(config) {
     const { userSettings, engineDefaults } = validateAndExportSettings(config);
@@ -22,30 +26,39 @@ class Client {
     this.invertedIndex = createInvertedIndex(this);
   }
   
-  getQueryFacets(docIDs, facetNames) {
-    getFacets(this, docIDs, facetNames);
+  filterResults(rankedDocs = null) {
+    const filteredResults = filtering(this, rankedDocs); 
+    return filteredResults;
   }
 
-  apiSearch(query) {
+  apiSearch(query, payload = null) {
+    // Payload
+    this.payload = payload !== null ? payload : null;
+    validateAndExportPayload(this);
+
+    // Tokenize query
     const queryTokens = normalise(this, query, "search");
+
+    // Get invertedIndex matches
     const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
     if (Object.keys(invertedIndexMatches).length === 0) {
-      return [];
+      const response = new GenerateResponse(this, [], []);
+      return response;
     }
-    const rankedDocs = getRankedDocs(this, invertedIndexMatches);
-    const rankedDocsIDs = rankedDocs.map((doc) => doc.objectid);
-    const facetsForQuery = this.getQueryFacets(rankedDocsIDs, ["category"]);
-    return rankedDocs;
-  }
 
-  // search(e) {
-  //   const queryTokens = normalise(this, e.target.value);
-  //   const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-  //   if (invertedIndexMatches.length === 0) {
-  //     return [];
-  //   }
-  //   return getRankedDocs(this, invertedIndexMatches);
-  // }
+    // Get ranked docs
+    const rankedDocs = getRankedDocs(this, invertedIndexMatches);
+
+    // Filter ranked docs
+    const filteredResults = this.filterResults(rankedDocs);
+
+    // Get query facets
+    const facetsForQuery = getFacets(this, rankedDocs);
+
+    // GenerateResponse
+    const response = new GenerateResponse(this, rankedDocs, facetsForQuery);
+    return response;
+  }
 }
 
 window.MinLia = {

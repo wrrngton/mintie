@@ -1,10 +1,11 @@
-import { ConfigError } from "./utils/error.js";
+import { ConfigError } from "../utils/error.js";
 
 // Default search settings, overridden during Client.init() if present
 const userSettings = {
   docSelector: ".card",
   searchableAttributes: ["title", "description"],
   stopWords: ["a", "and", "the", "f", "for"],
+  attributesToRetrieve: ["*"],
   facets: [],
   minCharsFor1Typo: 4,
   minCharsFor2Typos: 6,

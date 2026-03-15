@@ -121,6 +121,15 @@
     return matrix[b.length][a.length];
   }
 
+  // src/core/filtering.js
+  function filterParser(filters) {
+    console.log(filters);
+  }
+  function filtering(instance, rankedDocs) {
+    const filters = filterParser(instance.payload.filters);
+    console.log(filters);
+  }
+
   // src/core/query.js
   function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos2) {
     const distance = getLevenshteinDistance(token, term);
@@ -212,18 +221,19 @@
   }
 
   // src/core/queryFacets.js
-  function getFacets(instance, docIDs, facetNames) {
-    const rawDocStore = instance.rawDocStore;
+  function getFacets(instance, rankedDocs) {
     const facets = {};
+    if (instance.payload == null) return {};
     const configFacets = instance.config.facets;
     if (configFacets.length === 0)
       throw new QueryError(
-        "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration"
+        "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration to include the facets you want to return"
       );
+    const facetNames = instance.payload.facets;
     const possibleFacets = configFacets.flatMap((facet) => {
       return Array.from(
         new Set(
-          rawDocStore.map((doc) => doc.hasOwnProperty(facet) ? facet : false)
+          rankedDocs.map((doc) => doc.hasOwnProperty(facet) ? facet : false)
         )
       );
     });
@@ -233,18 +243,16 @@
           "One or more of your query facets do not exist in your index"
         );
       facets[facet] = {};
-      for (const docID of docIDs) {
-        const rawDocs = rawDocStore.filter((doc) => doc.objectid === docID);
-        rawDocs.forEach((doc) => {
-          if (facets[facet].hasOwnProperty(doc[facet]))
-            facets[facet][doc[facet]] += 1;
-          else {
-            facets[facet][doc[facet]] = 1;
-          }
-        });
-      }
+      rankedDocs.forEach((doc) => {
+        if (facets[facet].hasOwnProperty(doc[facet])) {
+          facets[facet][doc[facet]] += 1;
+        } else {
+          if (doc[facet] == void 0) return;
+          facets[facet][doc[facet]] = 1;
+        }
+      });
     }
-    console.log(facets);
+    return facets;
   }
 
   // src/core/ranking.js
@@ -275,11 +283,12 @@
     return dynamicSort(docMatches, customRanking);
   }
 
-  // src/settings.js
+  // src/validators/settings.js
   var userSettings = {
     docSelector: ".card",
     searchableAttributes: ["title", "description"],
     stopWords: ["a", "and", "the", "f", "for"],
+    attributesToRetrieve: ["*"],
     facets: [],
     minCharsFor1Typo: 4,
     minCharsFor2Typos: 6,
@@ -318,10 +327,74 @@
     return { userSettings, engineDefaults };
   }
 
+  // src/validators/payload.js
+  var payloadSettings = {
+    filters: "",
+    facets: []
+  };
+  var validPayloadAttributes = Object.keys(payloadSettings);
+  function validateAndExportPayload(instance) {
+    if (instance.payload === null) return;
+    for (const payloadAttribute of Object.keys(instance.payload)) {
+      if (!validPayloadAttributes.includes(payloadAttribute)) {
+        throw new ConfigError(
+          `${instance.payloadAttribute} is not a valid query parameter`
+        );
+      }
+    }
+    if (instance.payload.hasOwnProperty("filters")) {
+      if (typeof instance.payload.filters !== "string") {
+        throw new ConfigError("Filters must be a valid string");
+      }
+    }
+    if (instance.payload.hasOwnProperty("facets")) {
+      if (!Array.isArray(instance.payload.facets)) {
+        throw new ConfigError("Facets must be an array");
+      }
+      if (instance.payload.facets.length == 0) {
+        throw new ConfigError("Facets cannot be an empty array");
+      }
+      for (const queryFacet of instance.payload.facets) {
+        if (!instance.config.facets.includes(queryFacet)) {
+          throw new ConfigError(
+            `"${queryFacet}" must also be included in your config facets list`
+          );
+        }
+      }
+    }
+  }
+
+  // src/api/apiResponse.js
+  var GenerateResponse = class {
+    constructor(instance, docs, facets) {
+      this.docs = docs;
+      this.facets = facets;
+      this.attributesToRetrieve = instance.config.attributesToRetrieve;
+      this.limitResponseFields();
+      return this.buildResponse();
+    }
+    limitResponseFields() {
+      this.docs = this.docs.map((doc) => {
+        return Object.fromEntries(
+          Object.entries(doc).filter(
+            ([key]) => this.attributesToRetrieve.includes(key)
+          )
+        );
+      });
+    }
+    buildResponse() {
+      return {
+        hits: this.docs,
+        facets: this.facets
+      };
+    }
+  };
+
   // src/index.js
   var Client = class {
     rawDocStore = [];
     invertedIndex = {};
+    payload = null;
     constructor(config) {
       const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
       this.config = userSettings2;
@@ -331,28 +404,25 @@
       this.rawDocStore = processRawDocs(this);
       this.invertedIndex = createInvertedIndex(this);
     }
-    getQueryFacets(docIDs, facetNames) {
-      getFacets(this, docIDs, facetNames);
+    filterResults(rankedDocs = null) {
+      const filteredResults = filtering(this, rankedDocs);
+      return filteredResults;
     }
-    apiSearch(query) {
+    apiSearch(query, payload = null) {
+      this.payload = payload !== null ? payload : null;
+      validateAndExportPayload(this);
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
       if (Object.keys(invertedIndexMatches).length === 0) {
-        return [];
+        const response2 = new GenerateResponse(this, [], []);
+        return response2;
       }
       const rankedDocs = getRankedDocs(this, invertedIndexMatches);
-      const rankedDocsIDs = rankedDocs.map((doc) => doc.objectid);
-      const facetsForQuery = this.getQueryFacets(rankedDocsIDs, ["category"]);
-      return rankedDocs;
+      const filteredResults = this.filterResults(rankedDocs);
+      const facetsForQuery = getFacets(this, rankedDocs);
+      const response = new GenerateResponse(this, rankedDocs, facetsForQuery);
+      return response;
     }
-    // search(e) {
-    //   const queryTokens = normalise(this, e.target.value);
-    //   const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
-    //   if (invertedIndexMatches.length === 0) {
-    //     return [];
-    //   }
-    //   return getRankedDocs(this, invertedIndexMatches);
-    // }
   };
   window.MinLia = {
     SearchClient: Client
