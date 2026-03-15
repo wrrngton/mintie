@@ -1,29 +1,29 @@
 {
-  "name": "minlia",
+  "name": "mintie",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/minlia.min.js",
+  "main": "dist/mintie.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "esbuild ./src/index.js --bundle --sourcemap --outfile=test/minlia.js --watch",
-    "minifyBuild": "esbuild /src/index.js --bundle --minify --outfile=dist/minlia.min.js",
-    "regularBuild": "esbuild /src/index.js --bundle --outfile=dist/minlia.js",
+    "dev": "esbuild ./src/index.js --bundle --sourcemap --outfile=test/mintie.js --watch",
+    "minifyBuild": "esbuild /src/index.js --bundle --minify --outfile=dist/mintie.min.js",
+    "regularBuild": "esbuild /src/index.js --bundle --outfile=dist/mintie.js",
     "build": "npm run minifyBuild && npm run regularBuild",
     "audit": "npm audit",
     "docs": "jsdoc -c jsdoc.json"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wrrngton/minlia.git"
+    "url": "git+https://github.com/wrrngton/mintie.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/wrrngton/minlia/issues"
+    "url": "https://github.com/wrrngton/mintie/issues"
   },
-  "homepage": "https://github.com/wrrngton/minlia#readme",
+  "homepage": "https://github.com/wrrngton/mintie#readme",
   "dependencies": {
     "esbuild": "^0.27.3"
   },

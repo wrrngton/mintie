@@ -92,6 +92,6 @@ class Client {
   }
 }
 
-window.MinLia = {
+window.MinTie = {
   SearchClient: Client,
 };

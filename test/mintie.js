@@ -374,8 +374,8 @@
       return response;
     }
   };
-  window.MinLia = {
+  window.MinTie = {
     SearchClient: Client
   };
 })();
-//# sourceMappingURL=minlia.js.map
+//# sourceMappingURL=mintie.js.map

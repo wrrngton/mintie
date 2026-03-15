@@ -1,6 +1,6 @@
-# MinLia
+# MinTie
 
-MinLia (mini Algolia) is a client side, vanilla Javascript interpretation of Algolia. Similar to [Lunr.js](https://lunrjs.com/), but instead of BM25, it uses a tie breaking algorithm, like Algolia.
+MinTie (mini tiebreaker) is a client side, vanilla Javascript interpretation of a tiebreaking search algorithm. Similar to [Lunr.js](https://lunrjs.com/), but instead of BM25, it uses a tie breaking algorithm, similar to search engines like Algolia.
 
 Documents are retrieved from page markup via standard CSS selectors. Search behaviour is controlled via user defined configuration and query time parameters.
 
@@ -8,7 +8,13 @@ An [Inverted index](https://en.wikipedia.org/wiki/Inverted_index) is created at 
 
 ## Installation
 
-Download either minlia.js or minlia.min.js
+Download either minlia.js or minlia.min.js and add it to your site via a script tag:
+
+```
+<script src="mintie.js"></script>
+```
+
+An example project is available in the `/test` directory, which should provide an easy start guide to get up and running.
 
 ## Features
 

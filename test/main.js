@@ -1,5 +1,5 @@
-const hits = document.querySelector('#hits');
-const searchBar = document.querySelector('#searchBox');
+const hits = document.querySelector("#hits");
+const searchBar = document.querySelector("#searchBox");
 
 function renderResults(result) {
   return `
@@ -7,8 +7,8 @@ function renderResults(result) {
     <strong>${result.title}</strong>
     <p>${result.description}</p>
   </li>
-  `
-};
+  `;
+}
 
 const config = {
   docSelector: ".card",
@@ -24,20 +24,22 @@ const config = {
   searchBarSelector: "#searchBar",
 };
 
-const searchClient = new MinLia.SearchClient(config);
+const searchClient = new MinTie.SearchClient(config);
 searchClient.init();
 
 searchBar.addEventListener("input", (e) => {
   const query = e.target.value;
 
-  if (query.length === 0) return hits.innerHTML = "";
+  if (query.length === 0) return (hits.innerHTML = "");
 
-  hits.innerHTML = '';
+  hits.innerHTML = "";
   const response = searchClient.apiSearch(e.target.value);
   const searchHits = response.hits;
-  
-  if (searchHits.length === 0) return hits.innerHTML = 'No results';
 
-  const resultsHtml = searchHits.map((result) => renderResults(result)).join('');
-  hits.insertAdjacentHTML('afterbegin', resultsHtml);
+  if (searchHits.length === 0) return (hits.innerHTML = "No results");
+
+  const resultsHtml = searchHits
+    .map((result) => renderResults(result))
+    .join("");
+  hits.insertAdjacentHTML("afterbegin", resultsHtml);
 });
