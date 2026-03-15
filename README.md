@@ -8,7 +8,7 @@ An [Inverted index](https://en.wikipedia.org/wiki/Inverted_index) is created at 
 
 ## Installation
 
-Download either minlia.js or minlia.min.js and add it to your site via a script tag:
+Download either mintie.js or mintie.min.js (available in the `/dist`) folder and add it to your site via a script tag:
 
 ```
 <script src="mintie.js"></script>

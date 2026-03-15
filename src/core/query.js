@@ -8,7 +8,7 @@ import { getLevenshteinDistance } from "../utils/levenschtein.js";
 /**
  * Checks if a term matches a token within acceptable typo tolerance.
  * @private
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {string} term - The indexed term to check.
  * @param {string} token - The query token to match against.
  * @param {number} acceptableNumTypos - Maximum allowed Levenshtein distance.
@@ -30,7 +30,7 @@ function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
 /**
  * Finds matching documents in the inverted index for the given query tokens.
  * Supports fuzzy matching with configurable typo tolerance based on token length.
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {Object} instance.invertedIndex - The inverted index to search.
  * @param {Object} instance.config - Client configuration.
  * @param {number} instance.config.minCharsFor1Typo - Min chars to allow 1 typo.

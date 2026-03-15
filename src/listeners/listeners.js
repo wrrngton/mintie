@@ -5,7 +5,7 @@
 
 /**
  * Creates and attaches event listeners for the search input.
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {Function} instance.search - The search method to call on input.
  * @returns {void}
  * @example

@@ -8,7 +8,7 @@ import { ConfigError } from "../utils/error.js";
 /**
  * Processes raw documents from the DOM based on the configured selector.
  * Extracts searchable attributes and custom ranking attributes from data attributes.
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {Object} instance.config - The client configuration.
  * @param {string} instance.config.docSelector - CSS selector for document elements.
  * @param {Array<string>} instance.config.searchableAttributes - Attributes to extract for searching.

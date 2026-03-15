@@ -14,7 +14,7 @@ const punctuationRegex = /[^a-zA-Z0-9 ]/g;
  * Normalizes and tokenizes text for indexing or searching.
  * For search queries, splits on whitespace.
  * For documents, creates progressive token prefixes for prefix matching.
- * @param {Object} instance - The MinLia client instance (unused but passed for consistency).
+ * @param {Object} instance - The MinTie client instance (unused but passed for consistency).
  * @param {string} term - The text to normalize.
  * @param {string} type - The normalization type: "search" for queries, "docs" for documents.
  * @returns {Array<string>} Array of normalized tokens.

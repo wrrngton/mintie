@@ -8,7 +8,7 @@ import { normalise} from "../utils/normalise.js";
 /**
  * Creates an inverted index from the document store.
  * Maps each unique token to an array of document IDs containing that token.
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {Array<Object>} instance.rawDocStore - Array of processed documents.
  * @param {Object} instance.config - The client configuration.
  * @param {Array<string>} instance.config.stopWords - Words to exclude from indexing.

@@ -279,7 +279,7 @@
   var GenerateResponse = class {
     /**
      * Creates a new response object from ranked documents.
-     * @param {Object} instance - The MinLia client instance.
+     * @param {Object} instance - The MinTie client instance.
      * @param {Object} instance.config - Client configuration.
      * @param {Array<string>} instance.config.attributesToRetrieve - Attributes to include in response.
      * @param {Array<Object>} docs - Array of ranked document objects.
@@ -330,7 +330,7 @@
      */
     invertedIndex = {};
     /**
-     * Creates a new MinLia search client instance.
+     * Creates a new MinTie search client instance.
      * @param {Object} config - Configuration options for the search client.
      * @param {string} config.docSelector - CSS selector for document elements.
      * @param {Array<string>} config.searchableAttributes - Attributes to index for searching.

@@ -6,7 +6,7 @@
 /**
  * Ranks and sorts matched documents based on typo distance and custom ranking rules.
  * Uses a tie-breaking algorithm that applies ranking rules in order of priority.
- * @param {Object} instance - The MinLia client instance.
+ * @param {Object} instance - The MinTie client instance.
  * @param {Array<Object>} instance.rawDocStore - Array of all processed documents.
  * @param {Object} instance.config - Client configuration.
  * @param {Array<Object>} instance.config.customRanking - Custom ranking rules.

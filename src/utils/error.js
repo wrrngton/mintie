@@ -1,5 +1,5 @@
 /**
- * @fileoverview Custom error classes for MinLia.
+ * @fileoverview Custom error classes for MinTie.
  * @module utils/error
  */
 

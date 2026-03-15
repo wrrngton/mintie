@@ -1,6 +1,6 @@
 /**
- * @fileoverview Main entry point for the MinLia search engine client.
- * @module minlia
+ * @fileoverview Main entry point for the MinTie search engine client.
+ * @module mintie
  */
 
 import { normalise } from "./utils/normalise.js";
@@ -12,11 +12,11 @@ import { validateAndExportSettings } from "./validators/settings.js";
 import { GenerateResponse } from "./api/apiResponse.js";
 
 /**
- * The main search client for MinLia.
+ * The main search client for MinTie.
  * Provides full-text search capabilities with typo tolerance and custom ranking.
  * @class
  * @example
- * const client = new MinLia.SearchClient({
+ * const client = new MinTie.SearchClient({
  *   docSelector: ".product-card",
  *   searchableAttributes: ["title", "description"],
  *   customRanking: [{ attribute: "popularity", direction: 1 }]
@@ -38,7 +38,7 @@ class Client {
   invertedIndex = {};
 
   /**
-   * Creates a new MinLia search client instance.
+   * Creates a new MinTie search client instance.
    * @param {Object} config - Configuration options for the search client.
    * @param {string} config.docSelector - CSS selector for document elements.
    * @param {Array<string>} config.searchableAttributes - Attributes to index for searching.
