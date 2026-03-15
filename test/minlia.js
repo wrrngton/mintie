@@ -34,12 +34,6 @@
       this.name = "ConfigError";
     }
   };
-  var QueryError = class extends Error {
-    constructor(errorMessage) {
-      super(errorMessage);
-      this.name = "QueryError";
-    }
-  };
 
   // src/core/processDocs.js
   function processRawDocs(instance) {
@@ -55,11 +49,6 @@
       let rawDocObj = {};
       rawDocObj.objectid = doc.dataset.objectid;
       for (const att of instance.config.searchableAttributes) {
-        if (doc.dataset[att]) {
-          rawDocObj[att] = doc.dataset[att];
-        }
-      }
-      for (const att of instance.config.facets) {
         if (doc.dataset[att]) {
           rawDocObj[att] = doc.dataset[att];
         }
@@ -119,15 +108,6 @@
       }
     }
     return matrix[b.length][a.length];
-  }
-
-  // src/core/filtering.js
-  function filterParser(filters) {
-    console.log(filters);
-  }
-  function filtering(instance, rankedDocs) {
-    const filters = filterParser(instance.payload.filters);
-    console.log(filters);
   }
 
   // src/core/query.js
@@ -220,41 +200,6 @@
     return finalMatchedDocs;
   }
 
-  // src/core/queryFacets.js
-  function getFacets(instance, rankedDocs) {
-    const facets = {};
-    if (instance.payload == null) return {};
-    const configFacets = instance.config.facets;
-    if (configFacets.length === 0)
-      throw new QueryError(
-        "No facets defined for your index, but you are trying to return facets. Update the 'facets' field in your configuration to include the facets you want to return"
-      );
-    const facetNames = instance.payload.facets;
-    const possibleFacets = configFacets.flatMap((facet) => {
-      return Array.from(
-        new Set(
-          rankedDocs.map((doc) => doc.hasOwnProperty(facet) ? facet : false)
-        )
-      );
-    });
-    for (const facet of facetNames) {
-      if (!possibleFacets.includes(facet))
-        throw new QueryError(
-          "One or more of your query facets do not exist in your index"
-        );
-      facets[facet] = {};
-      rankedDocs.forEach((doc) => {
-        if (facets[facet].hasOwnProperty(doc[facet])) {
-          facets[facet][doc[facet]] += 1;
-        } else {
-          if (doc[facet] == void 0) return;
-          facets[facet][doc[facet]] = 1;
-        }
-      });
-    }
-    return facets;
-  }
-
   // src/core/ranking.js
   function getRankedDocs(instance, matches) {
     const arrayOfDocMatchIds = Array.from(Object.keys(matches));
@@ -289,7 +234,6 @@
     searchableAttributes: ["title", "description"],
     stopWords: ["a", "and", "the", "f", "for"],
     attributesToRetrieve: ["*"],
-    facets: [],
     minCharsFor1Typo: 4,
     minCharsFor2Typos: 6,
     customRanking: [
@@ -327,48 +271,10 @@
     return { userSettings, engineDefaults };
   }
 
-  // src/validators/payload.js
-  var payloadSettings = {
-    filters: "",
-    facets: []
-  };
-  var validPayloadAttributes = Object.keys(payloadSettings);
-  function validateAndExportPayload(instance) {
-    if (instance.payload === null) return;
-    for (const payloadAttribute of Object.keys(instance.payload)) {
-      if (!validPayloadAttributes.includes(payloadAttribute)) {
-        throw new ConfigError(
-          `${instance.payloadAttribute} is not a valid query parameter`
-        );
-      }
-    }
-    if (instance.payload.hasOwnProperty("filters")) {
-      if (typeof instance.payload.filters !== "string") {
-        throw new ConfigError("Filters must be a valid string");
-      }
-    }
-    if (instance.payload.hasOwnProperty("facets")) {
-      if (!Array.isArray(instance.payload.facets)) {
-        throw new ConfigError("Facets must be an array");
-      }
-      if (instance.payload.facets.length == 0) {
-        throw new ConfigError("Facets cannot be an empty array");
-      }
-      for (const queryFacet of instance.payload.facets) {
-        if (!instance.config.facets.includes(queryFacet)) {
-          throw new ConfigError(
-            `"${queryFacet}" must also be included in your config facets list`
-          );
-        }
-      }
-    }
-  }
-
   // src/api/apiResponse.js
   var GenerateResponse = class {
-    constructor(instance, docs, facets) {
+    constructor(instance, docs) {
       this.docs = docs;
-      this.facets = facets;
       this.attributesToRetrieve = instance.config.attributesToRetrieve;
       this.limitResponseFields();
       return this.buildResponse();
@@ -384,8 +290,7 @@
     }
     buildResponse() {
       return {
-        hits: this.docs,
-        facets: this.facets
+        hits: this.docs
       };
     }
   };
@@ -394,7 +299,6 @@
   var Client = class {
     rawDocStore = [];
     invertedIndex = {};
-    payload = null;
     constructor(config) {
       const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
       this.config = userSettings2;
@@ -404,13 +308,7 @@
       this.rawDocStore = processRawDocs(this);
       this.invertedIndex = createInvertedIndex(this);
     }
-    filterResults(rankedDocs = null) {
-      const filteredResults = filtering(this, rankedDocs);
-      return filteredResults;
-    }
-    apiSearch(query, payload = null) {
-      this.payload = payload !== null ? payload : null;
-      validateAndExportPayload(this);
+    apiSearch(query) {
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
       if (Object.keys(invertedIndexMatches).length === 0) {
@@ -418,9 +316,7 @@
         return response2;
       }
       const rankedDocs = getRankedDocs(this, invertedIndexMatches);
-      const filteredResults = this.filterResults(rankedDocs);
-      const facetsForQuery = getFacets(this, rankedDocs);
-      const response = new GenerateResponse(this, rankedDocs, facetsForQuery);
+      const response = new GenerateResponse(this, rankedDocs);
       return response;
     }
   };

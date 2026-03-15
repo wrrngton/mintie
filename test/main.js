@@ -16,7 +16,6 @@ const config = {
   stopWords: ["a", "and", "of", "for", "egg"],
   minCharsFor1Typo: 4,
   minCharsFor2Typos: 6,
-  facets: ["category", "topic"],
   attributesToRetrieve: ["title", "description"],
   customRanking: [
     { attribute: "popularity", direction: 1 },

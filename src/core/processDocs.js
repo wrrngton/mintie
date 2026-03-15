@@ -19,11 +19,6 @@ export function processRawDocs(instance) {
         rawDocObj[att] = doc.dataset[att];
       }
     }
-    for (const att of instance.config.facets) {
-      if (doc.dataset[att]) {
-        rawDocObj[att] = doc.dataset[att];
-      }
-    }
     for (const att of instance.config.customRanking) {
       if (doc.dataset[att.attribute]) {
         rawDocObj[att.attribute] = doc.dataset[att.attribute];

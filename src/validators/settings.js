@@ -6,7 +6,6 @@ const userSettings = {
   searchableAttributes: ["title", "description"],
   stopWords: ["a", "and", "the", "f", "for"],
   attributesToRetrieve: ["*"],
-  facets: [],
   minCharsFor1Typo: 4,
   minCharsFor2Typos: 6,
   customRanking: [

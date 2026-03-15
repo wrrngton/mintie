@@ -1,5 +1,4 @@
 import { getLevenshteinDistance } from "../utils/levenschtein.js";
-import {filtering} from "./filtering.js";
 
 function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
   const distance = getLevenshteinDistance(token, term);

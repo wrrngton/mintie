@@ -1,7 +1,6 @@
 export class GenerateResponse {
-  constructor(instance, docs, facets) {
+  constructor(instance, docs) {
     this.docs = docs;
-    this.facets = facets;
     this.attributesToRetrieve = instance.config.attributesToRetrieve;
     this.limitResponseFields();
     return this.buildResponse();
@@ -20,7 +19,6 @@ export class GenerateResponse {
   buildResponse() {
     return {
       hits: this.docs,
-      facets: this.facets,
     };
   }
 }
