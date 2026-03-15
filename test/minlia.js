@@ -29,6 +29,10 @@
 
   // src/utils/error.js
   var ConfigError = class extends Error {
+    /**
+     * Creates a new ConfigError.
+     * @param {string} errorMessage - The error message describing the configuration problem.
+     */
     constructor(errorMessage) {
       super(errorMessage);
       this.name = "ConfigError";
@@ -273,12 +277,25 @@
 
   // src/api/apiResponse.js
   var GenerateResponse = class {
+    /**
+     * Creates a new response object from ranked documents.
+     * @param {Object} instance - The MinLia client instance.
+     * @param {Object} instance.config - Client configuration.
+     * @param {Array<string>} instance.config.attributesToRetrieve - Attributes to include in response.
+     * @param {Array<Object>} docs - Array of ranked document objects.
+     * @returns {Object} The formatted response with hits array.
+     */
     constructor(instance, docs) {
       this.docs = docs;
       this.attributesToRetrieve = instance.config.attributesToRetrieve;
       this.limitResponseFields();
       return this.buildResponse();
     }
+    /**
+     * Filters document attributes to only include those specified in attributesToRetrieve.
+     * @private
+     * @returns {void}
+     */
     limitResponseFields() {
       this.docs = this.docs.map((doc) => {
         return Object.fromEntries(
@@ -288,6 +305,11 @@
         );
       });
     }
+    /**
+     * Builds the final response object.
+     * @private
+     * @returns {Object} Response object with hits array.
+     */
     buildResponse() {
       return {
         hits: this.docs
@@ -297,17 +319,49 @@
 
   // src/index.js
   var Client = class {
+    /**
+     * Storage for raw document data extracted from the DOM.
+     * @type {Array<Object>}
+     */
     rawDocStore = [];
+    /**
+     * The inverted index mapping tokens to document IDs.
+     * @type {Object<string, Array<string>>}
+     */
     invertedIndex = {};
+    /**
+     * Creates a new MinLia search client instance.
+     * @param {Object} config - Configuration options for the search client.
+     * @param {string} config.docSelector - CSS selector for document elements.
+     * @param {Array<string>} config.searchableAttributes - Attributes to index for searching.
+     * @param {Array<string>} [config.stopWords] - Words to exclude from indexing.
+     * @param {Array<string>} [config.attributesToRetrieve] - Attributes to include in results.
+     * @param {number} [config.minCharsFor1Typo=4] - Minimum characters before allowing 1 typo.
+     * @param {number} [config.minCharsFor2Typos=6] - Minimum characters before allowing 2 typos.
+     * @param {Array<Object>} [config.customRanking] - Custom ranking rules.
+     * @param {string} [config.searchBarSelector] - CSS selector for the search input.
+     * @throws {ConfigError} If configuration is invalid.
+     */
     constructor(config) {
       const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
       this.config = userSettings2;
       this.engineDefaults = engineDefaults2;
     }
+    /**
+     * Initializes the search engine by processing documents and building the inverted index.
+     * Must be called after construction and before performing searches.
+     * @returns {void}
+     */
     init() {
       this.rawDocStore = processRawDocs(this);
       this.invertedIndex = createInvertedIndex(this);
     }
+    /**
+     * Performs a search query and returns ranked results.
+     * @param {string} query - The search query string.
+     * @returns {Object} The search response object.
+     * @returns {Array<Object>} return.hits - Array of matching documents.
+     */
     apiSearch(query) {
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);

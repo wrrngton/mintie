@@ -6,6 +6,10 @@ Documents are retrieved from page markup via standard CSS selectors. Search beha
 
 An [Inverted index](https://en.wikipedia.org/wiki/Inverted_index) is created at initialisation time and is used for efficient document lookups at query time.
 
+## Installation
+
+Download either minlia.js or minlia.min.js
+
 ## Features
 
 - **Typo tolerance**: Each query token is calculated against the search index for hits leveraging a [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance) algorithm. Typo thresholds can be set via a user defined cofig.

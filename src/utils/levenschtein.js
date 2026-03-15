@@ -1,3 +1,20 @@
+/**
+ * @fileoverview Levenshtein distance calculation for fuzzy string matching.
+ * @module utils/levenschtein
+ */
+
+/**
+ * Calculates the Levenshtein distance between two strings.
+ * The Levenshtein distance is the minimum number of single-character edits
+ * (insertions, deletions, or substitutions) required to change one string into another.
+ * @param {string} a - The first string.
+ * @param {string} b - The second string.
+ * @returns {number} The Levenshtein distance between the two strings.
+ * @example
+ * getLevenshteinDistance("kitten", "sitting"); // Returns 3
+ * getLevenshteinDistance("book", "back");      // Returns 2
+ * getLevenshteinDistance("test", "test");      // Returns 0
+ */
 export function getLevenshteinDistance(a, b) {
   const matrix = [];
 

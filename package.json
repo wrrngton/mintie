@@ -2,13 +2,15 @@
   "name": "minlia",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/minlia.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "esbuild ./src/index.js --bundle --sourcemap --outfile=test/minlia.js --watch",
     "minifyBuild": "esbuild /src/index.js --bundle --minify --outfile=dist/minlia.min.js",
     "regularBuild": "esbuild /src/index.js --bundle --outfile=dist/minlia.js",
-    "build": "npm run minifyBuild && npm run regularBuild"
+    "build": "npm run minifyBuild && npm run regularBuild",
+    "audit": "npm audit",
+    "docs": "jsdoc -c jsdoc.json"
   },
   "repository": {
     "type": "git",
@@ -24,5 +26,8 @@
   "homepage": "https://github.com/wrrngton/minlia#readme",
   "dependencies": {
     "esbuild": "^0.27.3"
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.5"
   }
 }

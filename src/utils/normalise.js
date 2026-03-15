@@ -1,5 +1,32 @@
+/**
+ * @fileoverview Text normalization utilities for tokenizing documents and queries.
+ * @module utils/normalise
+ */
+
+/**
+ * Regular expression to remove punctuation from text.
+ * @constant {RegExp}
+ * @private
+ */
 const punctuationRegex = /[^a-zA-Z0-9 ]/g;
 
+/**
+ * Normalizes and tokenizes text for indexing or searching.
+ * For search queries, splits on whitespace.
+ * For documents, creates progressive token prefixes for prefix matching.
+ * @param {Object} instance - The MinLia client instance (unused but passed for consistency).
+ * @param {string} term - The text to normalize.
+ * @param {string} type - The normalization type: "search" for queries, "docs" for documents.
+ * @returns {Array<string>} Array of normalized tokens.
+ * @example
+ * // Search normalization
+ * normalise(instance, "Hello World!", "search");
+ * // Returns: ["hello", "world"]
+ *
+ * // Document normalization (creates prefixes)
+ * normalise(instance, "cat", "docs");
+ * // Returns: ["c", "ca", "cat"]
+ */
 export function normalise(instance, term, type) {
   const masterTokens = [];
   const splitVals = term

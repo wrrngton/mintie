@@ -1,5 +1,22 @@
+/**
+ * @fileoverview Inverted index creation for efficient full-text search.
+ * @module core/invertedIndex
+ */
+
 import { normalise} from "../utils/normalise.js";
 
+/**
+ * Creates an inverted index from the document store.
+ * Maps each unique token to an array of document IDs containing that token.
+ * @param {Object} instance - The MinLia client instance.
+ * @param {Array<Object>} instance.rawDocStore - Array of processed documents.
+ * @param {Object} instance.config - The client configuration.
+ * @param {Array<string>} instance.config.stopWords - Words to exclude from indexing.
+ * @returns {Object<string, Array<string>>} Inverted index mapping tokens to document IDs.
+ * @example
+ * // Returns structure like:
+ * // { "laptop": ["doc1", "doc2"], "computer": ["doc1"] }
+ */
 export function createInvertedIndex(instance) {
   const invertedIndex = {};
 
