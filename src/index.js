@@ -6,7 +6,7 @@ import { filtering } from "./core/filtering.js";
 import { getFacets } from "./core/queryFacets.js";
 import { getRankedDocs } from "./core/ranking.js";
 import { validateAndExportSettings } from "./validators/settings.js";
-import { validateAndExportPayload } from "./validators/payload.js";
+import { validatePayload } from "./validators/payload.js";
 import { GenerateResponse } from "./api/apiResponse.js";
 // import { createEventListeners } from "./listeners.js";
 
@@ -19,13 +19,10 @@ class Client {
     const { userSettings, engineDefaults } = validateAndExportSettings(config);
     this.config = userSettings;
     this.engineDefaults = engineDefaults;
-  }
-
-  init() {
     this.rawDocStore = processRawDocs(this);
     this.invertedIndex = createInvertedIndex(this);
   }
-  
+
   filterResults(rankedDocs = null) {
     const filteredResults = filtering(this, rankedDocs); 
     return filteredResults;
@@ -34,7 +31,7 @@ class Client {
   apiSearch(query, payload = null) {
     // Payload
     this.payload = payload !== null ? payload : null;
-    validateAndExportPayload(this);
+    validatePayload(this);
 
     // Tokenize query
     const queryTokens = normalise(this, query, "search");
@@ -50,7 +47,7 @@ class Client {
     const rankedDocs = getRankedDocs(this, invertedIndexMatches);
 
     // Filter ranked docs
-    const filteredResults = this.filterResults(rankedDocs);
+    const filteredResults = this.filterResults(this, rankedDocs);
 
     // Get query facets
     const facetsForQuery = getFacets(this, rankedDocs);

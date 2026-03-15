@@ -8,12 +8,11 @@ export function filtering(instance, rankedDocs) {
    * and we filter directly on the rawDocStore
    */
 
-  // if (rankedDocs == null) {
-  //   return ;
-  // }
+  if(instance.payload === null) return rankedDocs;
 
+  if (rankedDocs == null) {
+    return ;
+  }
   const filters = filterParser(instance.payload.filters);
-  console.log(filters);
-
 
 }

@@ -7,7 +7,7 @@ const payloadSettings = {
 
 const validPayloadAttributes = Object.keys(payloadSettings);
 
-export function validateAndExportPayload(instance) {
+export function validatePayload(instance) {
   if (instance.payload === null) return;
 
   for (const payloadAttribute of Object.keys(instance.payload)) {

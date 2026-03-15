@@ -126,8 +126,11 @@
     console.log(filters);
   }
   function filtering(instance, rankedDocs) {
+    if (instance.payload === null) return rankedDocs;
+    if (rankedDocs == null) {
+      return;
+    }
     const filters = filterParser(instance.payload.filters);
-    console.log(filters);
   }
 
   // src/core/query.js
@@ -333,7 +336,7 @@
     facets: []
   };
   var validPayloadAttributes = Object.keys(payloadSettings);
-  function validateAndExportPayload(instance) {
+  function validatePayload(instance) {
     if (instance.payload === null) return;
     for (const payloadAttribute of Object.keys(instance.payload)) {
       if (!validPayloadAttributes.includes(payloadAttribute)) {
@@ -399,8 +402,6 @@
       const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
       this.config = userSettings2;
       this.engineDefaults = engineDefaults2;
-    }
-    init() {
       this.rawDocStore = processRawDocs(this);
       this.invertedIndex = createInvertedIndex(this);
     }
@@ -410,7 +411,7 @@
     }
     apiSearch(query, payload = null) {
       this.payload = payload !== null ? payload : null;
-      validateAndExportPayload(this);
+      validatePayload(this);
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
       if (Object.keys(invertedIndexMatches).length === 0) {
@@ -418,7 +419,7 @@
         return response2;
       }
       const rankedDocs = getRankedDocs(this, invertedIndexMatches);
-      const filteredResults = this.filterResults(rankedDocs);
+      const filteredResults = this.filterResults(this, rankedDocs);
       const facetsForQuery = getFacets(this, rankedDocs);
       const response = new GenerateResponse(this, rankedDocs, facetsForQuery);
       return response;

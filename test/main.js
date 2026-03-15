@@ -26,7 +26,6 @@ const config = {
 };
 
 const searchClient = new MinLia.SearchClient(config);
-searchClient.init();
 
 searchBar.addEventListener("input", (e) => {
   const query = e.target.value;
