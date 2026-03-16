@@ -26,12 +26,6 @@ import { GenerateResponse } from "./api/apiResponse.js";
  */
 class Client {
   /**
-   * Storage for raw document data extracted from the DOM.
-   * @type {Array<Object>}
-   */
-  rawDocStore = [];
-
-  /**
    * The inverted index mapping tokens to document IDs.
    * @type {Object<string, Array<string>>}
    */
@@ -39,6 +33,7 @@ class Client {
 
   /**
    * Creates a new MinTie search client instance.
+   * Initializes the search engine by processing documents and building the inverted index.
    * @param {Object} config - Configuration options for the search client.
    * @param {string} config.docSelector - CSS selector for document elements.
    * @param {Array<string>} config.searchableAttributes - Attributes to index for searching.
@@ -50,19 +45,11 @@ class Client {
    * @param {string} [config.searchBarSelector] - CSS selector for the search input.
    * @throws {ConfigError} If configuration is invalid.
    */
-  constructor(config) {
+  constructor(config, docs) {
     const { userSettings, engineDefaults } = validateAndExportSettings(config);
     this.config = userSettings;
     this.engineDefaults = engineDefaults;
-  }
-
-  /**
-   * Initializes the search engine by processing documents and building the inverted index.
-   * Must be called after construction and before performing searches.
-   * @returns {void}
-   */
-  init() {
-    this.rawDocStore = processRawDocs(this);
+    this.rawDocStore = processRawDocs(docs);
     this.invertedIndex = createInvertedIndex(this);
   }
 
@@ -82,12 +69,13 @@ class Client {
       const response = new GenerateResponse(this, [], []);
       return response;
     }
+    console.log(invertedIndexMatches);
 
     // Get ranked docs
     const rankedDocs = getRankedDocs(this, invertedIndexMatches);
 
     // GenerateResponse
-    const response = new GenerateResponse(this, rankedDocs);
+    const response = new GenerateResponse(this, rankedDocs, invertedIndexMatches);
     return response;
   }
 }

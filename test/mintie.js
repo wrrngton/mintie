@@ -3,7 +3,7 @@
   var punctuationRegex = /[^a-zA-Z0-9 ]/g;
   function normalise(instance, term, type) {
     const masterTokens = [];
-    const splitVals = term.toLowerCase().trim().replace(punctuationRegex, "").split(" ");
+    const splitVals = term.toString().toLowerCase().trim().replace(punctuationRegex, "").split(" ");
     if (type === "search") {
       return splitVals;
     }
@@ -40,31 +40,32 @@
   };
 
   // src/core/processDocs.js
-  function processRawDocs(instance) {
-    const rawDocuments = Array.from(
-      document.querySelectorAll(instance.config.docSelector)
-    );
-    if (rawDocuments.length === 0) {
-      throw new ConfigError(
-        `The "${instance.config.docSelector}" docSelector returned no documents`
-      );
+  function processRawDocs(docs) {
+    const typeHashMap = {};
+    if (typeof docs !== "object" || docs == null) {
+      throw new ConfigError("Supplied documents are not objects or is null");
     }
-    const rawDocumentsData = rawDocuments.map((doc) => {
-      let rawDocObj = {};
-      rawDocObj.objectid = doc.dataset.objectid;
-      for (const att of instance.config.searchableAttributes) {
-        if (doc.dataset[att]) {
-          rawDocObj[att] = doc.dataset[att];
-        }
+    for (const doc of docs) {
+      const objectid = doc.objectid;
+      if (objectid == void 0) {
+        throw new ConfigError("All docs must have an objectid field");
       }
-      for (const att of instance.config.customRanking) {
-        if (doc.dataset[att.attribute]) {
-          rawDocObj[att.attribute] = doc.dataset[att.attribute];
-        }
+      if (typeof objectid !== "string") {
+        throw new ConfigError("Objectids must all be strings");
       }
-      return rawDocObj;
-    });
-    return rawDocumentsData;
+      for (const [key, value] of Object.entries(doc)) {
+        if (typeHashMap.hasOwnProperty(key)) typeHashMap[key].push(typeof value);
+        else typeHashMap[key] = [typeof value];
+      }
+    }
+    for (const [key, value] of Object.entries(typeHashMap)) {
+      const uniqueArr = [...new Set(value)];
+      if (uniqueArr.length > 1)
+        throw new ConfigError(
+          `Your documents cannot have mixed types per attribute. Different data types detectes for ${key}.`
+        );
+    }
+    return docs;
   }
 
   // src/core/invertedIndex.js
@@ -73,7 +74,7 @@
     for (const doc of instance.rawDocStore) {
       const docTokens = [];
       for (const [key, value] of Object.entries(doc)) {
-        if (key == "objectid") continue;
+        if (key == "objectid" || !instance.config.searchableAttributes.includes(key)) continue;
         const attributeTokens = normalise(instance, value, "docs");
         attributeTokens.forEach((token) => {
           if (instance.config.stopWords.includes(token)) return;
@@ -122,7 +123,9 @@
     }
     return {
       docs: instance.invertedIndex[term],
-      distance
+      distance,
+      // Query term tracks the matching intervered index term for later snippeting and highlighting
+      queryTerm: [term]
     };
   }
   function getInvertedIndexMatches(instance, queryTokens) {
@@ -135,7 +138,8 @@
           iiMatches.push([
             {
               docs: instance.invertedIndex[token],
-              distance: 0
+              distance: 0,
+              queryTerm: [token]
             }
           ]);
         }
@@ -159,13 +163,17 @@
       const matchedArray = iiMatches[0];
       for (let i = 0; i < matchedArray.length; i++) {
         const docsArr = matchedArray[i].docs;
+        const term = matchedArray[i].queryTerm;
         const docDistance = matchedArray[i].distance;
         for (let j = 0; j < docsArr.length; j++) {
           const docID = docsArr[j];
           if (finalMatchedDocs.hasOwnProperty(docID) && finalMatchedDocs[docID] < docDistance) {
             continue;
           } else {
-            finalMatchedDocs[docID] = docDistance;
+            finalMatchedDocs[docID] = {
+              distance: docDistance,
+              queryTerm: term
+            };
           }
         }
       }
@@ -198,8 +206,11 @@
       const totalDistance = intersectionAndBestMatches.reduce(
         (acc, cur) => acc.distance + cur.distance
       );
+      const allQueryTerms = intersectionAndBestMatches.flatMap(
+        (match) => match.queryTerm
+      );
       if (totalDistance > 3) return {};
-      finalMatchedDocs[i] = totalDistance;
+      finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
     }
     return finalMatchedDocs;
   }
@@ -285,10 +296,11 @@
      * @param {Array<Object>} docs - Array of ranked document objects.
      * @returns {Object} The formatted response with hits array.
      */
-    constructor(instance, docs) {
+    constructor(instance, docs, invertedIndexMatches) {
       this.docs = docs;
-      this.attributesToRetrieve = instance.config.attributesToRetrieve;
-      this.limitResponseFields();
+      this.invertedIndexMatches = invertedIndexMatches;
+      this.limitResponseFields(instance);
+      this.generateHighlights();
       return this.buildResponse();
     }
     /**
@@ -296,15 +308,42 @@
      * @private
      * @returns {void}
      */
-    limitResponseFields() {
+    limitResponseFields(instance) {
       this.docs = this.docs.map((doc) => {
         return Object.fromEntries(
           Object.entries(doc).filter(
-            ([key]) => this.attributesToRetrieve.includes(key)
+            ([key]) => instance.config.attributesToRetrieve.includes(key) || key === "objectid"
           )
         );
       });
     }
+    generateHighlights() {
+      const queryTerms = [];
+      for (const key of Object.keys(this.invertedIndexMatches)) {
+        queryTerms.push(...this.invertedIndexMatches[key].queryTerm);
+      }
+      this.docs = this.docs.map((doc) => {
+        for (const [key, value] of Object.entries(doc)) {
+          if (key === "objectid") continue;
+          const lowercaseVal = value.toLowerCase();
+          for (const term of queryTerms) {
+            if (lowercaseVal.includes(term)) {
+              const newSentence = lowercaseVal.split(" ").map((word) => {
+                return word.startsWith(term) ? word.replace(term, `<em>${term}</em>`) : word;
+              }).join(" ");
+              return {
+                ...doc,
+                highlight: newSentence
+              };
+            }
+          }
+        }
+        return doc;
+      });
+      console.log(this.docs);
+    }
+    // For that document, get the document's fields that aren't objectIDs
+    // If that field contains text from queryTerms, add a new highlight field containing the attribute and highlighted value
     /**
      * Builds the final response object.
      * @private
@@ -320,17 +359,13 @@
   // src/index.js
   var Client = class {
     /**
-     * Storage for raw document data extracted from the DOM.
-     * @type {Array<Object>}
-     */
-    rawDocStore = [];
-    /**
      * The inverted index mapping tokens to document IDs.
      * @type {Object<string, Array<string>>}
      */
     invertedIndex = {};
     /**
      * Creates a new MinTie search client instance.
+     * Initializes the search engine by processing documents and building the inverted index.
      * @param {Object} config - Configuration options for the search client.
      * @param {string} config.docSelector - CSS selector for document elements.
      * @param {Array<string>} config.searchableAttributes - Attributes to index for searching.
@@ -342,18 +377,11 @@
      * @param {string} [config.searchBarSelector] - CSS selector for the search input.
      * @throws {ConfigError} If configuration is invalid.
      */
-    constructor(config) {
+    constructor(config, docs) {
       const { userSettings: userSettings2, engineDefaults: engineDefaults2 } = validateAndExportSettings(config);
       this.config = userSettings2;
       this.engineDefaults = engineDefaults2;
-    }
-    /**
-     * Initializes the search engine by processing documents and building the inverted index.
-     * Must be called after construction and before performing searches.
-     * @returns {void}
-     */
-    init() {
-      this.rawDocStore = processRawDocs(this);
+      this.rawDocStore = processRawDocs(docs);
       this.invertedIndex = createInvertedIndex(this);
     }
     /**
@@ -369,8 +397,9 @@
         const response2 = new GenerateResponse(this, [], []);
         return response2;
       }
+      console.log(invertedIndexMatches);
       const rankedDocs = getRankedDocs(this, invertedIndexMatches);
-      const response = new GenerateResponse(this, rankedDocs);
+      const response = new GenerateResponse(this, rankedDocs, invertedIndexMatches);
       return response;
     }
   };

@@ -24,7 +24,7 @@ export function createInvertedIndex(instance) {
     const docTokens = [];
 
     for (const [key, value] of Object.entries(doc)) {
-      if (key == "objectid") continue;
+      if (key == "objectid" || !instance.config.searchableAttributes.includes(key)) continue;
 
       const attributeTokens = normalise(instance, value, "docs");
 

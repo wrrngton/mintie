@@ -6,45 +6,48 @@
 import { ConfigError } from "../utils/error.js";
 
 /**
- * Processes raw documents from the DOM based on the configured selector.
- * Extracts searchable attributes and custom ranking attributes from data attributes.
- * @param {Object} instance - The MinTie client instance.
+ * Processes raw documents from the JS object passed as initialisation time.
+ * Validates JSON.
+ * @param {Array<Object>} instance - The MinTie client instance.
  * @param {Object} instance.config - The client configuration.
- * @param {string} instance.config.docSelector - CSS selector for document elements.
- * @param {Array<string>} instance.config.searchableAttributes - Attributes to extract for searching.
- * @param {Array<Object>} instance.config.customRanking - Custom ranking configuration.
- * @returns {Array<Object>} Array of processed document objects with objectid and extracted attributes.
- * @throws {ConfigError} If no documents match the docSelector.
+ * @returns {Array<Object>} Array of validated documents.
+ * @throws {ConfigError} If any validation fails.
  * @example
- * // Given HTML: <div class="card" data-objectid="1" data-title="Product">...</div>
- * const docs = processRawDocs(clientInstance);
+ * // Given HTML:  [{ objectid: "1", title: "Product" }]
  * // Returns: [{ objectid: "1", title: "Product" }]
  */
-export function processRawDocs(instance) {
-  const rawDocuments = Array.from(
-    document.querySelectorAll(instance.config.docSelector),
-  );
+export function processRawDocs(docs) {
+  const typeHashMap = {};
 
-  if (rawDocuments.length === 0) {
-    throw new ConfigError(
-      `The "${instance.config.docSelector}" docSelector returned no documents`,
-    );
+  if (typeof docs !== "object" || docs == null) {
+    throw new ConfigError("Supplied documents are not objects or is null");
   }
 
-  const rawDocumentsData = rawDocuments.map((doc) => {
-    let rawDocObj = {};
-    rawDocObj.objectid = doc.dataset.objectid;
-    for (const att of instance.config.searchableAttributes) {
-      if (doc.dataset[att]) {
-        rawDocObj[att] = doc.dataset[att];
-      }
+  for (const doc of docs) {
+    const objectid = doc.objectid;
+
+    if (objectid == undefined) {
+      throw new ConfigError("All docs must have an objectid field");
     }
-    for (const att of instance.config.customRanking) {
-      if (doc.dataset[att.attribute]) {
-        rawDocObj[att.attribute] = doc.dataset[att.attribute];
-      }
+
+    if (typeof objectid !== "string") {
+      throw new ConfigError("Objectids must all be strings");
     }
-    return rawDocObj;
-  });
-  return rawDocumentsData;
+
+    for (const [key, value] of Object.entries(doc)) {
+      if (typeHashMap.hasOwnProperty(key)) typeHashMap[key].push(typeof value);
+      else typeHashMap[key] = [typeof value];
+    }
+  }
+
+  for (const [key, value] of Object.entries(typeHashMap)) {
+    const uniqueArr = [...new Set(value)];
+
+    if (uniqueArr.length > 1)
+      throw new ConfigError(
+        `Your documents cannot have mixed types per attribute. Different data types detectes for ${key}.`,
+      );
+  }
+
+  return docs;
 }

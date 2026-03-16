@@ -24,8 +24,10 @@ function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
   return {
     docs: instance.invertedIndex[term],
     distance: distance,
+    // Query term tracks the matching intervered index term for later snippeting and highlighting
+    queryTerm: [term],
   };
-};
+}
 
 /**
  * Finds matching documents in the inverted index for the given query tokens.
@@ -62,6 +64,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
           {
             docs: instance.invertedIndex[token],
             distance: 0,
+            queryTerm: [token],
           },
         ]);
       }
@@ -87,7 +90,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
   }
 
   // Handle no results case
-  if(iiMatches.length === 0) return {}
+  if (iiMatches.length === 0) return {};
 
   /* iiMatches can be a shallow, 1dimensional array if there is only query token
    * We don't need to do an AND check across more than 1 array for query matches
@@ -100,6 +103,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
 
     for (let i = 0; i < matchedArray.length; i++) {
       const docsArr = matchedArray[i].docs;
+      const term = matchedArray[i].queryTerm;
       const docDistance = matchedArray[i].distance;
       for (let j = 0; j < docsArr.length; j++) {
         const docID = docsArr[j];
@@ -109,7 +113,10 @@ export function getInvertedIndexMatches(instance, queryTokens) {
         ) {
           continue;
         } else {
-          finalMatchedDocs[docID] = docDistance;
+          finalMatchedDocs[docID] = {
+            distance: docDistance,
+            queryTerm: term,
+          };
         }
       }
     }
@@ -153,9 +160,13 @@ export function getInvertedIndexMatches(instance, queryTokens) {
       (acc, cur) => acc.distance + cur.distance,
     );
 
+    const allQueryTerms = intersectionAndBestMatches.flatMap(
+      (match) => match.queryTerm,
+    );
+
     // Acceptable typos across all tokens
     if (totalDistance > 3) return {};
-    finalMatchedDocs[i] = totalDistance;
+    finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
   }
 
   return finalMatchedDocs;

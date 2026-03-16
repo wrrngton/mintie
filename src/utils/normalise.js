@@ -29,11 +29,14 @@ const punctuationRegex = /[^a-zA-Z0-9 ]/g;
  */
 export function normalise(instance, term, type) {
   const masterTokens = [];
+  // toString() to account for making ints and floats searchable
   const splitVals = term
+    .toString()
     .toLowerCase()
     .trim()
     .replace(punctuationRegex, "")
-    .split(" ");
+    .split(" ")
+
 
   // We just split queries on white space to separate terms, docs have a different normalisation process
   if (type === "search") {
