@@ -5,6 +5,12 @@
 
 import { getLevenshteinDistance } from "../utils/levenschtein.js";
 
+function spliceMatches(instance, matches) {
+  const matchArray = Array.from(Object.entries(matches));
+  const splicedMatchArray = matchArray.splice(0, instance.payload.docsPerPage);
+  return Object.fromEntries(splicedMatchArray);
+}
+
 /**
  * Checks if a term matches a token within acceptable typo tolerance.
  * @private
@@ -25,7 +31,7 @@ function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos) {
     docs: instance.invertedIndex[term],
     distance: distance,
     // Query term tracks the matching intervered index term for later snippeting and highlighting
-    queryTerm: [term],
+    queryTerm: [token],
   };
 }
 
@@ -103,7 +109,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
 
     for (let i = 0; i < matchedArray.length; i++) {
       const docsArr = matchedArray[i].docs;
-      const term = matchedArray[i].queryTerm;
+      const token = matchedArray[i].queryTerm;
       const docDistance = matchedArray[i].distance;
       for (let j = 0; j < docsArr.length; j++) {
         const docID = docsArr[j];
@@ -115,12 +121,12 @@ export function getInvertedIndexMatches(instance, queryTokens) {
         } else {
           finalMatchedDocs[docID] = {
             distance: docDistance,
-            queryTerm: term,
+            queryTerm: token,
           };
         }
       }
     }
-    return finalMatchedDocs;
+    return spliceMatches(instance, finalMatchedDocs);
   }
 
   // Flatten array docs into a 2d array to check for matches across both arrays
@@ -168,6 +174,5 @@ export function getInvertedIndexMatches(instance, queryTokens) {
     if (totalDistance > 3) return {};
     finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
   }
-
-  return finalMatchedDocs;
+  return spliceMatches(instance, finalMatchedDocs);
 }

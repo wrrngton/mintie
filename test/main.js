@@ -4,8 +4,8 @@ const searchBar = document.querySelector("#searchBox");
 function renderResults(result) {
   return `
   <li>
-    <strong>${result.title}</strong>
-    <p>${result.description}</p>
+    <strong>${result.highlights.title !== undefined ? result.highlights.title : result.title}</strong>
+    <p>${result.highlights.description}</p>
   </li>
   `;
 }
@@ -123,7 +123,7 @@ searchBar.addEventListener("input", (e) => {
   if (query.length === 0) return (hits.innerHTML = "");
 
   hits.innerHTML = "";
-  const response = searchClient.apiSearch(e.target.value);
+  const response = searchClient.apiSearch(e.target.value, {docsPerPage: 2});
   const searchHits = response.hits;
 
   if (searchHits.length === 0) return (hits.innerHTML = "No results");

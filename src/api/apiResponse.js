@@ -46,42 +46,30 @@ export class GenerateResponse {
   }
 
   generateHighlights() {
-    // Unpack query terms from invertedIndexMatches
     const queryTerms = [];
     for (const key of Object.keys(this.invertedIndexMatches)) {
       queryTerms.push(...this.invertedIndexMatches[key].queryTerm);
     }
 
-    // Loop through each document
+    const sortedTerms = [...queryTerms].sort((a, b) => b.length - a.length);
+    const pattern = sortedTerms
+      .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+
+    const regex = new RegExp(`\\b(${pattern})`, "gi");
+
     this.docs = this.docs.map((doc) => {
+      const highlight = {};
+
       for (const [key, value] of Object.entries(doc)) {
-        if (key === "objectid") continue; 
+        if (key === "objectid" || typeof value !== "string") continue;
 
-        const lowercaseVal = value.toLowerCase();
-
-        for (const term of queryTerms) {
-          if (lowercaseVal.includes(term)) {
-            const newSentence = lowercaseVal
-              .split(" ")
-              .map((word) => {
-                return word.startsWith(term)
-                  ? word.replace(term, `<em>${term}</em>`)
-                  : word;
-              })
-              .join(" ");
-
-            return {
-              ...doc,
-              highlight: newSentence,
-            };
-          }
-        }
+        highlight[key] = value.replace(regex, (match) => `<em>${match}</em>`);
       }
-      return doc; 
-    });
-    console.log(this.docs);
-  }
 
+      return { ...doc, highlights: highlight };
+    });
+  }
 
   // For that document, get the document's fields that aren't objectIDs
   // If that field contains text from queryTerms, add a new highlight field containing the attribute and highlighted value

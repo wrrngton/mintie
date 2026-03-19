@@ -116,11 +116,6 @@
   }
 
   // src/core/query.js
-  function spliceMatches(instance, matches) {
-    const matchArray = Array.from(Object.entries(matches));
-    const splicedMatchArray = matchArray.splice(0, instance.payload.docsPerPage);
-    return Object.fromEntries(splicedMatchArray);
-  }
   function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos2) {
     const distance = getLevenshteinDistance(token, term);
     if (distance > acceptableNumTypos2) {
@@ -182,7 +177,7 @@
           }
         }
       }
-      return spliceMatches(instance, finalMatchedDocs);
+      return finalMatchedDocs;
     }
     const docsAsMatrix = iiMatches.map((match) => {
       const new_arr = [];
@@ -217,7 +212,7 @@
       if (totalDistance > 3) return {};
       finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
     }
-    return spliceMatches(instance, finalMatchedDocs);
+    return finalMatchedDocs;
   }
 
   // src/core/ranking.js
@@ -353,34 +348,6 @@
     }
   };
 
-  // src/validators/payload.js
-  var VALID_FIELDS_TYPES = {
-    docsPerPage: "number"
-  };
-  var defaultPayload = {
-    docsPerPage: 10
-  };
-  function validatePayload(payload) {
-    if (!payload) return defaultPayload;
-    const payloadKeysAndValues = Object.entries(payload);
-    const validFieldKeys = Object.keys(VALID_FIELDS_TYPES);
-    for (const [key, value] of payloadKeysAndValues) {
-      if (!validFieldKeys.includes(key)) {
-        throw new ConfigError(`"${key}" is not a valid query parameter`);
-      }
-      if (typeof value !== VALID_FIELDS_TYPES[key]) {
-        throw new ConfigError(
-          `The type of ${key} is ${typeof value} when it should be  ${VALID_FIELDS_TYPES[key]}`
-        );
-      }
-      if (payload.docsPerPage && payload.docsPerPage === 0) {
-        throw new ConfigError(`docsPerPage cannot be 0`);
-      }
-      defaultPayload[key] = value;
-    }
-    return defaultPayload;
-  }
-
   // src/index.js
   var Client = class {
     /**
@@ -415,8 +382,7 @@
      * @returns {Object} The search response object.
      * @returns {Array<Object>} return.hits - Array of matching documents.
      */
-    apiSearch(query, payload = null) {
-      this.payload = validatePayload(payload);
+    apiSearch(query) {
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
       if (Object.keys(invertedIndexMatches).length === 0) {
@@ -432,4 +398,3 @@
     SearchClient: Client
   };
 })();
-//# sourceMappingURL=mintie.js.map

@@ -10,6 +10,7 @@ import { getInvertedIndexMatches } from "./core/query.js";
 import { getRankedDocs } from "./core/ranking.js";
 import { validateAndExportSettings } from "./validators/settings.js";
 import { GenerateResponse } from "./api/apiResponse.js";
+import { validatePayload } from "./validators/payload.js";
 
 /**
  * The main search client for MinTie.
@@ -59,7 +60,10 @@ class Client {
    * @returns {Object} The search response object.
    * @returns {Array<Object>} return.hits - Array of matching documents.
    */
-  apiSearch(query) {
+  apiSearch(query, payload=null) {
+    // Validate payload
+    this.payload = validatePayload(payload)
+
     // Tokenize query
     const queryTokens = normalise(this, query, "search");
 
@@ -69,7 +73,6 @@ class Client {
       const response = new GenerateResponse(this, [], []);
       return response;
     }
-    console.log(invertedIndexMatches);
 
     // Get ranked docs
     const rankedDocs = getRankedDocs(this, invertedIndexMatches);

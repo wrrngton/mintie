@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "esbuild ./src/index.js --bundle --sourcemap --outfile=test/mintie.js --watch",
-    "minifyBuild": "esbuild /src/index.js --bundle --minify --outfile=dist/mintie.min.js",
-    "regularBuild": "esbuild /src/index.js --bundle --outfile=dist/mintie.js",
+    "minifyBuild": "esbuild ./src/index.js --bundle --minify --outfile=dist/mintie.min.js",
+    "regularBuild": "esbuild ./src/index.js --bundle --outfile=dist/mintie.js",
     "build": "npm run minifyBuild && npm run regularBuild",
     "audit": "npm audit",
     "docs": "jsdoc -c jsdoc.json"
