@@ -64,7 +64,6 @@ class Client {
     // Validate payload
     this.payload = validatePayload(payload)
 
-    // Tokenize query
     const queryTokens = normalise(this, query, "search");
 
     // Get invertedIndex matches

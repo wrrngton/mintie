@@ -123,7 +123,7 @@ searchBar.addEventListener("input", (e) => {
   if (query.length === 0) return (hits.innerHTML = "");
 
   hits.innerHTML = "";
-  const response = searchClient.apiSearch(e.target.value, {docsPerPage: 2});
+  const response = searchClient.apiSearch(e.target.value, { docsPerPage: 4 });
   const searchHits = response.hits;
 
   if (searchHits.length === 0) return (hits.innerHTML = "No results");
@@ -132,4 +132,10 @@ searchBar.addEventListener("input", (e) => {
     .map((result) => renderResults(result))
     .join("");
   hits.insertAdjacentHTML("afterbegin", resultsHtml);
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "k" && e.ctrlKey) {
+    searchBar.focus();
+  }
 });

@@ -21,7 +21,8 @@ export function createInvertedIndex(instance) {
   const invertedIndex = {};
 
   for (const doc of instance.rawDocStore) {
-    const docTokens = [];
+    // Each document gets a wildcard selector for wildcard matching
+    const docTokens = ["*"];
 
     for (const [key, value] of Object.entries(doc)) {
       if (key == "objectid" || !instance.config.searchableAttributes.includes(key)) continue;

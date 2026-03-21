@@ -16,6 +16,7 @@
  * const ranked = getRankedDocs(instance, { "doc1": 0, "doc2": 1 });
  * // Returns documents sorted by typo distance, then custom ranking
  */
+
 export function getRankedDocs(instance, matches) {
   const arrayOfDocMatchIds = Array.from(Object.keys(matches));
   let docMatches = instance.rawDocStore.filter((doc) =>
@@ -57,5 +58,7 @@ export function getRankedDocs(instance, matches) {
     });
   };
 
-  return dynamicSort(docMatches, customRanking);
+  const results = dynamicSort(docMatches, customRanking);
+  const splicedRedults = results.splice(0, instance.payload.docsPerPage);
+  return splicedRedults;
 }

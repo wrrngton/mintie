@@ -5,12 +5,6 @@
 
 import { getLevenshteinDistance } from "../utils/levenschtein.js";
 
-function spliceMatches(instance, matches) {
-  const matchArray = Array.from(Object.entries(matches));
-  const splicedMatchArray = matchArray.splice(0, instance.payload.docsPerPage);
-  return Object.fromEntries(splicedMatchArray);
-}
-
 /**
  * Checks if a term matches a token within acceptable typo tolerance.
  * @private
@@ -57,6 +51,9 @@ export function getInvertedIndexMatches(instance, queryTokens) {
   // Unpack all the terms in the inverted index
   const invertedIndexTerms = Object.keys(instance.invertedIndex);
 
+  /*  Push to list (iiMatches) of invertedIndex matches 
+   *  matches are only valid if they pass typo tolerance thresholds
+   */
   for (const token of queryTokens) {
     const tokenLength = token.length;
 
@@ -104,7 +101,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
   const finalMatchedDocs = {};
 
   if (iiMatches.length === 1) {
-    // iiMatches is only 1 long, so we fetch first array
+    // iiMatches.length === 1, so we fetch first array only
     const matchedArray = iiMatches[0];
 
     for (let i = 0; i < matchedArray.length; i++) {
@@ -126,7 +123,7 @@ export function getInvertedIndexMatches(instance, queryTokens) {
         }
       }
     }
-    return spliceMatches(instance, finalMatchedDocs);
+    return finalMatchedDocs;
   }
 
   // Flatten array docs into a 2d array to check for matches across both arrays
@@ -174,5 +171,5 @@ export function getInvertedIndexMatches(instance, queryTokens) {
     if (totalDistance > 3) return {};
     finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
   }
-  return spliceMatches(instance, finalMatchedDocs);
+  return finalMatchedDocs;
 }

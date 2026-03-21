@@ -2,6 +2,9 @@
   // src/utils/normalise.js
   var punctuationRegex = /[^a-zA-Z0-9 ]/g;
   function normalise(instance, term, type) {
+    if (type === "search" && term.trim() === "*") {
+      return term;
+    }
     const masterTokens = [];
     const splitVals = term.toString().toLowerCase().trim().replace(punctuationRegex, "").split(" ");
     if (type === "search") {
@@ -72,7 +75,7 @@
   function createInvertedIndex(instance) {
     const invertedIndex = {};
     for (const doc of instance.rawDocStore) {
-      const docTokens = [];
+      const docTokens = ["*"];
       for (const [key, value] of Object.entries(doc)) {
         if (key == "objectid" || !instance.config.searchableAttributes.includes(key)) continue;
         const attributeTokens = normalise(instance, value, "docs");
@@ -240,7 +243,9 @@
         return 0;
       });
     };
-    return dynamicSort(docMatches, customRanking);
+    const results = dynamicSort(docMatches, customRanking);
+    const splicedRedults = results.splice(0, instance.payload.docsPerPage);
+    return splicedRedults;
   }
 
   // src/validators/settings.js
@@ -348,6 +353,34 @@
     }
   };
 
+  // src/validators/payload.js
+  var VALID_FIELDS_TYPES = {
+    docsPerPage: "number"
+  };
+  var defaultPayload = {
+    docsPerPage: 10
+  };
+  function validatePayload(payload) {
+    if (!payload) return defaultPayload;
+    const payloadKeysAndValues = Object.entries(payload);
+    const validFieldKeys = Object.keys(VALID_FIELDS_TYPES);
+    for (const [key, value] of payloadKeysAndValues) {
+      if (!validFieldKeys.includes(key)) {
+        throw new ConfigError(`"${key}" is not a valid query parameter`);
+      }
+      if (typeof value !== VALID_FIELDS_TYPES[key]) {
+        throw new ConfigError(
+          `The type of ${key} is ${typeof value} when it should be  ${VALID_FIELDS_TYPES[key]}`
+        );
+      }
+      if (payload.docsPerPage && payload.docsPerPage === 0) {
+        throw new ConfigError(`docsPerPage cannot be 0`);
+      }
+      defaultPayload[key] = value;
+    }
+    return defaultPayload;
+  }
+
   // src/index.js
   var Client = class {
     /**
@@ -382,7 +415,8 @@
      * @returns {Object} The search response object.
      * @returns {Array<Object>} return.hits - Array of matching documents.
      */
-    apiSearch(query) {
+    apiSearch(query, payload = null) {
+      this.payload = validatePayload(payload);
       const queryTokens = normalise(this, query, "search");
       const invertedIndexMatches = getInvertedIndexMatches(this, queryTokens);
       if (Object.keys(invertedIndexMatches).length === 0) {

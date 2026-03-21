@@ -2,6 +2,9 @@
   // src/utils/normalise.js
   var punctuationRegex = /[^a-zA-Z0-9 ]/g;
   function normalise(instance, term, type) {
+    if (type === "search" && term.trim() === "*") {
+      return term;
+    }
     const masterTokens = [];
     const splitVals = term.toString().toLowerCase().trim().replace(punctuationRegex, "").split(" ");
     if (type === "search") {
@@ -72,7 +75,7 @@
   function createInvertedIndex(instance) {
     const invertedIndex = {};
     for (const doc of instance.rawDocStore) {
-      const docTokens = [];
+      const docTokens = ["*"];
       for (const [key, value] of Object.entries(doc)) {
         if (key == "objectid" || !instance.config.searchableAttributes.includes(key)) continue;
         const attributeTokens = normalise(instance, value, "docs");
@@ -116,11 +119,6 @@
   }
 
   // src/core/query.js
-  function spliceMatches(instance, matches) {
-    const matchArray = Array.from(Object.entries(matches));
-    const splicedMatchArray = matchArray.splice(0, instance.payload.docsPerPage);
-    return Object.fromEntries(splicedMatchArray);
-  }
   function matchIsNotTooFuzzy(instance, term, token, acceptableNumTypos2) {
     const distance = getLevenshteinDistance(token, term);
     if (distance > acceptableNumTypos2) {
@@ -182,7 +180,7 @@
           }
         }
       }
-      return spliceMatches(instance, finalMatchedDocs);
+      return finalMatchedDocs;
     }
     const docsAsMatrix = iiMatches.map((match) => {
       const new_arr = [];
@@ -217,7 +215,7 @@
       if (totalDistance > 3) return {};
       finalMatchedDocs[i] = { distance: totalDistance, queryTerm: allQueryTerms };
     }
-    return spliceMatches(instance, finalMatchedDocs);
+    return finalMatchedDocs;
   }
 
   // src/core/ranking.js
@@ -245,7 +243,9 @@
         return 0;
       });
     };
-    return dynamicSort(docMatches, customRanking);
+    const results = dynamicSort(docMatches, customRanking);
+    const splicedRedults = results.splice(0, instance.payload.docsPerPage);
+    return splicedRedults;
   }
 
   // src/validators/settings.js

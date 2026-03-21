@@ -28,6 +28,14 @@ const punctuationRegex = /[^a-zA-Z0-9 ]/g;
  * // Returns: ["c", "ca", "cat"]
  */
 export function normalise(instance, term, type) {
+  /* If query is exactly a * then it is a wildcard selector and we just return back the query
+   * With no normalisation
+   * We have to check if it's a query normalisation or not first as well
+   */
+  if (type === "search" && term.trim() === "*") {
+    return term;
+  }
+
   const masterTokens = [];
   // toString() to account for making ints and floats searchable
   const splitVals = term
@@ -35,10 +43,9 @@ export function normalise(instance, term, type) {
     .toLowerCase()
     .trim()
     .replace(punctuationRegex, "")
-    .split(" ")
+    .split(" ");
 
-
-  // We just split queries on white space to separate terms, docs have a different normalisation process
+  // We just split queries on white space to separate terms, documents have a different normalisation process
   if (type === "search") {
     return splitVals;
   }
